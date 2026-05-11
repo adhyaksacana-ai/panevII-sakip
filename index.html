@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SAKIP Kejaksaan</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Navigasi utama">
+        <div class="brand">
+          <div class="brand-mark">K</div>
+          <div>
+            <strong>SAKIP Kejaksaan</strong>
+            <span>Akuntabilitas Kinerja</span>
+          </div>
+        </div>
+
+        <nav class="nav-list">
+          <button class="nav-item active" data-page="dashboard" type="button">
+            <span>Dashboard</span>
+          </button>
+          <button class="nav-item" data-page="rencana" type="button">
+            <span>Rencana Kinerja</span>
+          </button>
+          <button class="nav-item" data-page="perjanjian" type="button">
+            <span>Perjanjian Kinerja</span>
+          </button>
+          <button class="nav-item" data-page="realisasi" type="button">
+            <span>Realisasi</span>
+          </button>
+          <button class="nav-item" data-page="eviden" type="button">
+            <span>Dokumen Eviden</span>
+          </button>
+          <button class="nav-item" data-page="evaluasi" type="button">
+            <span>Evaluasi</span>
+          </button>
+        </nav>
+
+        <div class="profile-box">
+          <span class="profile-dot"></span>
+          <div>
+            <strong>Admin SAKIP</strong>
+            <small>Kejaksaan Negeri</small>
+          </div>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Tahun Anggaran 2026</p>
+            <h1 id="pageTitle">Dashboard Kinerja</h1>
+          </div>
+          <div class="top-actions">
+            <select id="unitSelect" aria-label="Pilih unit kerja">
+              <option>Kejaksaan Negeri Bandung</option>
+              <option>Kejaksaan Negeri Bogor</option>
+              <option>Kejaksaan Tinggi Jawa Barat</option>
+            </select>
+            <button class="primary-button" id="openEntry" type="button">Input Realisasi</button>
+          </div>
+        </header>
+
+        <section class="content-page active" id="dashboard">
+          <div class="metric-grid">
+            <article class="metric">
+              <span>Capaian Kinerja</span>
+              <strong>87.4%</strong>
+              <small>Naik 6.2% dari triwulan lalu</small>
+            </article>
+            <article class="metric">
+              <span>Indikator Aktif</span>
+              <strong>24</strong>
+              <small>18 on-track, 6 perlu perhatian</small>
+            </article>
+            <article class="metric">
+              <span>Dokumen Eviden</span>
+              <strong>156</strong>
+              <small>42 menunggu verifikasi</small>
+            </article>
+            <article class="metric warning">
+              <span>Catatan Evaluasi</span>
+              <strong>9</strong>
+              <small>Perlu tindak lanjut bulan ini</small>
+            </article>
+          </div>
+
+          <div class="two-column">
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Progress Sasaran Strategis</h2>
+                <button class="ghost-button" type="button">Lihat Semua</button>
+              </div>
+              <div class="goal-list" id="goalList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h2>Agenda Pelaporan</h2>
+                <button class="ghost-button" type="button">Tambah</button>
+              </div>
+              <ol class="timeline">
+                <li>
+                  <time>15 Mei</time>
+                  <span>Finalisasi realisasi triwulan II</span>
+                </li>
+                <li>
+                  <time>22 Mei</time>
+                  <span>Review eviden capaian indikator</span>
+                </li>
+                <li>
+                  <time>30 Mei</time>
+                  <span>Rapat evaluasi kinerja unit</span>
+                </li>
+              </ol>
+            </section>
+          </div>
+
+          <section class="panel performance-tree-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Pohon Kinerja</h2>
+                <p class="panel-copy">Cascading sasaran strategis, sasaran program, sasaran kegiatan, dan indikator.</p>
+              </div>
+              <span class="badge">Terintegrasi Rencana Kinerja</span>
+            </div>
+            <div class="performance-tree" id="performanceTree"></div>
+          </section>
+        </section>
+
+        <section class="content-page" id="rencana">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Impor Matriks Kinerja</h2>
+                <p class="panel-copy">Unggah CSV/TSV/JSON atau tempel data dari Excel untuk ekstraksi otomatis.</p>
+              </div>
+              <span class="badge">Ekstraksi Dokumen</span>
+            </div>
+            <div class="import-grid">
+              <label>
+                File Matriks
+                <input id="matrixFile" type="file" accept=".csv,.tsv,.txt,.json,.pdf,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+              </label>
+              <label class="full-span">
+                Tempel Matriks
+                <textarea id="matrixText" rows="6" placeholder="sasaran_strategis	indikator_strategis	target_strategis	sasaran_program	indikator_program	target_program	sasaran_kegiatan	indikator_kegiatan	target_kegiatan	penanggung_jawab"></textarea>
+              </label>
+              <div class="import-actions full-span">
+                <button class="primary-button" id="importMatrix" type="button">Ekstrak dan Input Otomatis</button>
+                <button class="ghost-button" id="clearMatrix" type="button">Bersihkan</button>
+              </div>
+              <p class="helper-text full-span">
+                Format: Excel, CSV, TSV, TXT, JSON, PDF. Kolom yang dibaca: sasaran_strategis, indikator_strategis, target_strategis, sasaran_program, indikator_program, target_program, sasaran_kegiatan, indikator_kegiatan, target_kegiatan, penanggung_jawab.
+              </p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Input Rencana Kinerja Cascading</h2>
+                <p class="panel-copy">Susun keterkaitan dari sasaran strategis sampai indikator kegiatan.</p>
+              </div>
+              <span class="badge">Tahun 2026</span>
+            </div>
+            <form class="cascade-form" id="cascadeForm">
+              <input id="editIndex" type="hidden" value="" />
+              <label>
+                Sasaran Strategis
+                <input name="strategic" id="strategicInput" list="strategicOptions" placeholder="Pilih atau ketik sasaran strategis" required />
+                <datalist id="strategicOptions"></datalist>
+              </label>
+              <label>
+                Sasaran Program
+                <input name="program" id="programInput" list="programOptions" placeholder="Pilih atau ketik sasaran program" required />
+                <datalist id="programOptions"></datalist>
+              </label>
+              <label>
+                Sasaran Kegiatan
+                <input name="activity" placeholder="Contoh: Terlaksananya monitoring capaian kinerja" required />
+              </label>
+              <label>
+                Penanggung Jawab
+                <input name="owner" placeholder="Contoh: Subbag Pembinaan" required />
+              </label>
+              <fieldset class="sasaran-set full-span">
+                <legend>Sasaran Lain</legend>
+                <div class="sasaran-list" id="additionalSasaranList"></div>
+                <button class="ghost-button" id="addSasaran" type="button">Tambah Sasaran</button>
+              </fieldset>
+              <fieldset class="indicator-set">
+                <legend>Indikator Sasaran Strategis</legend>
+                <div class="indicator-list" data-indicator-list="strategic"></div>
+                <button class="ghost-button add-indicator" data-add-indicator="strategic" type="button">Tambah Indikator</button>
+              </fieldset>
+              <fieldset class="indicator-set">
+                <legend>Indikator Sasaran Program</legend>
+                <div class="indicator-list" data-indicator-list="program"></div>
+                <button class="ghost-button add-indicator" data-add-indicator="program" type="button">Tambah Indikator</button>
+              </fieldset>
+              <fieldset class="indicator-set full-span">
+                <legend>Indikator Sasaran Kegiatan</legend>
+                <div class="indicator-list" data-indicator-list="activity"></div>
+                <button class="ghost-button add-indicator" data-add-indicator="activity" type="button">Tambah Indikator</button>
+              </fieldset>
+              <div class="form-actions full-span">
+                <button class="primary-button" id="saveCascade" type="submit">Simpan Cascading</button>
+                <button class="ghost-button" id="cancelEdit" type="button" hidden>Batal Edit</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Daftar Cascading Kinerja</h2>
+              <button class="ghost-button" id="resetCascade" type="button">Reset Data</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Sasaran Strategis</th>
+                    <th>Indikator Strategis</th>
+                    <th>Sasaran Program</th>
+                    <th>Indikator Program</th>
+                    <th>Sasaran Kegiatan</th>
+                    <th>Indikator Kegiatan</th>
+                    <th>Penanggung Jawab</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="planRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="content-page" id="perjanjian">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Input Perjanjian Kinerja</h2>
+                <p class="panel-copy">Buat komitmen kinerja antara atasan dan bawahan berdasarkan sasaran cascading.</p>
+              </div>
+              <span class="badge">PK 2026</span>
+            </div>
+            <form class="agreement-form" id="agreementForm">
+              <input id="agreementEditIndex" type="hidden" value="" />
+              <label>
+                Nomor Perjanjian
+                <input name="agreementNumber" placeholder="Contoh: PK-001/2026" required />
+              </label>
+              <label>
+                Periode
+                <input name="agreementPeriod" placeholder="Contoh: Tahun 2026" value="Tahun 2026" required />
+              </label>
+              <label>
+                Nama Atasan
+                <input name="supervisorName" placeholder="Nama pejabat penilai/atasan" required />
+              </label>
+              <label>
+                Jabatan Atasan
+                <input name="supervisorPosition" placeholder="Contoh: Kepala Kejaksaan Negeri" required />
+              </label>
+              <label>
+                Nama Bawahan
+                <input name="employeeName" placeholder="Nama pejabat/pelaksana" required />
+              </label>
+              <label>
+                Jabatan Bawahan
+                <input name="employeePosition" placeholder="Contoh: Kepala Seksi Pidana Umum" required />
+              </label>
+              <label class="full-span">
+                Pilih Sasaran Kinerja
+                <select name="agreementCascade" id="agreementCascadeSelect" required></select>
+              </label>
+              <div class="agreement-preview full-span" id="agreementPreview"></div>
+              <div class="form-actions full-span">
+                <button class="primary-button" id="saveAgreement" type="submit">Simpan Perjanjian</button>
+                <button class="ghost-button" id="cancelAgreementEdit" type="button" hidden>Batal Edit</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Daftar Perjanjian Kinerja</h2>
+              <button class="ghost-button" id="resetAgreements" type="button">Reset PK</button>
+            </div>
+            <div class="table-wrap">
+              <table class="agreement-table">
+                <thead>
+                  <tr>
+                    <th>Nomor</th>
+                    <th>Atasan</th>
+                    <th>Bawahan</th>
+                    <th>Sasaran</th>
+                    <th>Indikator Kegiatan</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="agreementRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="content-page" id="realisasi">
+          <section class="panel form-panel">
+            <div class="panel-header">
+              <h2>Input Realisasi Kinerja</h2>
+              <span class="badge">Triwulan II</span>
+            </div>
+            <form id="realizationForm">
+              <label>
+                Indikator
+                <select name="indicator" required>
+                  <option value="">Pilih indikator</option>
+                  <option>Persentase penyelesaian perkara tepat waktu</option>
+                  <option>Nilai kepatuhan pelaporan kinerja</option>
+                  <option>Indeks kepuasan layanan publik</option>
+                </select>
+              </label>
+              <label>
+                Realisasi
+                <input name="value" type="number" min="0" max="100" placeholder="Contoh: 86" required />
+              </label>
+              <label>
+                Keterangan
+                <textarea name="note" rows="4" placeholder="Ringkasan capaian, kendala, dan tindak lanjut"></textarea>
+              </label>
+              <button class="primary-button" type="submit">Simpan Realisasi</button>
+            </form>
+          </section>
+        </section>
+
+        <section class="content-page" id="eviden">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Dokumen Eviden</h2>
+              <button class="primary-button small" type="button">Unggah Dokumen</button>
+            </div>
+            <div class="document-grid" id="documentGrid"></div>
+          </section>
+        </section>
+
+        <section class="content-page" id="evaluasi">
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Evaluasi dan Tindak Lanjut</h2>
+              <button class="primary-button small" type="button">Buat Catatan</button>
+            </div>
+            <div class="review-list" id="reviewList"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="entryDialog">
+      <form method="dialog" class="modal">
+        <div class="panel-header">
+          <h2>Input Cepat Realisasi</h2>
+          <button class="icon-button" value="cancel" aria-label="Tutup" type="submit">x</button>
+        </div>
+        <label>
+          Capaian
+          <input type="number" min="0" max="100" value="87" />
+        </label>
+        <label>
+          Catatan Singkat
+          <textarea rows="3">Capaian berjalan sesuai target, eviden menunggu verifikasi.</textarea>
+        </label>
+        <button class="primary-button" value="default" type="submit">Simpan</button>
+      </form>
+    </dialog>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
