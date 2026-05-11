@@ -85,12 +85,125 @@ const defaultAgreements = [
     employeeName: "Kepala Seksi Pidana Umum",
     employeePosition: "Bawahan",
     cascadeIndex: 0,
+    indicatorLevel: "activity",
+    indicatorIndex: 0,
+    target: "120 perkara",
     status: "Menunggu Tanda Tangan",
   },
 ];
 
 let agreements = structuredClone(defaultAgreements);
 let editingAgreementIndex = null;
+
+const defaultRenstra = [
+  {
+    period: "2026-2030",
+    unit: "Kejaksaan Negeri Bandung",
+    strategic: "Meningkatnya akuntabilitas kinerja satuan kerja",
+    program: "Meningkatnya kualitas perencanaan dan pelaporan kinerja",
+    activity: "Penyusunan laporan kinerja triwulanan",
+    owner: "Subbag Pembinaan",
+    strategicIndicators: [
+      { name: "Nilai SAKIP satuan kerja", targets: ["82", "84", "86", "88", "90"] },
+      { name: "Persentase rekomendasi evaluasi yang ditindaklanjuti", targets: ["80%", "85%", "90%", "95%", "100%"] },
+    ],
+    programIndicators: [
+      { name: "Persentase dokumen kinerja tepat waktu", targets: ["90%", "92%", "94%", "96%", "100%"] },
+    ],
+    activityIndicators: [
+      { name: "Jumlah laporan monitoring tepat waktu", targets: ["4 laporan", "4 laporan", "4 laporan", "4 laporan", "4 laporan"] },
+    ],
+  },
+  {
+    period: "2026-2030",
+    unit: "Kejaksaan Negeri Bandung",
+    strategic: "Meningkatnya penanganan perkara yang profesional dan berkeadilan",
+    program: "Terwujudnya penanganan perkara pidana umum yang efektif",
+    activity: "Penyelesaian administrasi dan pengendalian perkara pidana umum",
+    owner: "Seksi Pidana Umum",
+    strategicIndicators: [
+      { name: "Persentase perkara selesai sesuai standar layanan", targets: ["82%", "86%", "90%", "93%", "95%"] },
+      { name: "Indeks kualitas penanganan perkara", targets: ["78", "80", "83", "86", "88"] },
+    ],
+    programIndicators: [
+      { name: "Persentase berkas perkara yang ditangani tepat waktu", targets: ["84%", "88%", "91%", "94%", "96%"] },
+    ],
+    activityIndicators: [
+      { name: "Jumlah perkara yang diselesaikan sesuai SOP", targets: ["110 perkara", "118 perkara", "126 perkara", "134 perkara", "140 perkara"] },
+      { name: "Persentase eviden perkara tervalidasi", targets: ["86%", "90%", "93%", "96%", "98%"] },
+    ],
+  },
+  {
+    period: "2026-2030",
+    unit: "Kejaksaan Negeri Bandung",
+    strategic: "Meningkatnya efektivitas pemulihan aset dan penyelamatan keuangan negara",
+    program: "Meningkatnya penyelesaian perkara tindak pidana khusus",
+    activity: "Pelaksanaan penyidikan dan penuntutan perkara tindak pidana khusus",
+    owner: "Seksi Pidana Khusus",
+    strategicIndicators: [
+      { name: "Nilai pemulihan aset dan penyelamatan keuangan negara", targets: ["Rp2 M", "Rp2.5 M", "Rp3 M", "Rp3.5 M", "Rp4 M"] },
+    ],
+    programIndicators: [
+      { name: "Persentase perkara tindak pidana khusus yang naik tahap", targets: ["70%", "75%", "80%", "85%", "90%"] },
+      { name: "Persentase tindak lanjut hasil audit kerugian negara", targets: ["75%", "80%", "85%", "90%", "95%"] },
+    ],
+    activityIndicators: [
+      { name: "Jumlah perkara tindak pidana khusus yang diselesaikan", targets: ["8 perkara", "10 perkara", "12 perkara", "14 perkara", "16 perkara"] },
+    ],
+  },
+  {
+    period: "2026-2030",
+    unit: "Kejaksaan Negeri Bandung",
+    strategic: "Meningkatnya kualitas pelayanan hukum dan kepercayaan masyarakat",
+    program: "Terwujudnya layanan hukum yang responsif dan mudah diakses",
+    activity: "Pelayanan hukum, penerangan hukum, dan pengelolaan pengaduan masyarakat",
+    owner: "Seksi Intelijen",
+    strategicIndicators: [
+      { name: "Indeks kepuasan layanan publik", targets: ["82", "85", "88", "90", "92"] },
+      { name: "Persentase layanan tanpa pengaduan berulang", targets: ["85%", "88%", "91%", "94%", "96%"] },
+    ],
+    programIndicators: [
+      { name: "Persentase layanan selesai sesuai SLA", targets: ["86%", "89%", "92%", "95%", "97%"] },
+    ],
+    activityIndicators: [
+      { name: "Jumlah kegiatan penerangan hukum", targets: ["18 kegiatan", "22 kegiatan", "26 kegiatan", "30 kegiatan", "34 kegiatan"] },
+      { name: "Persentase pengaduan masyarakat yang ditindaklanjuti", targets: ["90%", "93%", "95%", "97%", "100%"] },
+    ],
+  },
+  {
+    period: "2026-2030",
+    unit: "Kejaksaan Negeri Bandung",
+    strategic: "Meningkatnya tata kelola barang bukti dan barang rampasan",
+    program: "Meningkatnya pengelolaan barang bukti yang transparan dan akuntabel",
+    activity: "Inventarisasi, pemeliharaan, dan penyelesaian barang bukti",
+    owner: "Seksi Pengelolaan Barang Bukti",
+    strategicIndicators: [
+      { name: "Persentase barang bukti tercatat dan terlacak", targets: ["88%", "91%", "94%", "97%", "100%"] },
+    ],
+    programIndicators: [
+      { name: "Persentase barang bukti yang memiliki status hukum jelas", targets: ["80%", "84%", "88%", "92%", "96%"] },
+    ],
+    activityIndicators: [
+      { name: "Jumlah pembaruan data barang bukti", targets: ["12 kali", "12 kali", "12 kali", "12 kali", "12 kali"] },
+      { name: "Persentase barang rampasan yang diselesaikan", targets: ["70%", "76%", "82%", "88%", "94%"] },
+    ],
+  },
+];
+
+let renstraItems = structuredClone(defaultRenstra);
+let editingRenstraIndex = null;
+
+const defaultRealizations = [
+  {
+    quarter: "Triwulan I",
+    agreementIndex: 0,
+    achievement: "28 perkara",
+    budget: 125000000,
+    note: "Realisasi awal berjalan sesuai target triwulanan.",
+  },
+];
+
+let realizations = structuredClone(defaultRealizations);
 
 const documents = [
   ["Laporan Realisasi TW I", "PDF - terverifikasi"],
@@ -109,11 +222,13 @@ const reviews = [
 
 const titles = {
   dashboard: "Dashboard Kinerja",
-  rencana: "Rencana Kinerja",
+  renstra: "Matriks Renstra Satker",
+  rencana: "Rencana Kinerja Tahunan",
   perjanjian: "Perjanjian Kinerja",
   realisasi: "Realisasi Kinerja",
-  eviden: "Dokumen Eviden",
-  evaluasi: "Evaluasi SAKIP",
+  eviden: "Dokumen AKIP",
+  evaluasi: "Monitoring dan Evaluasi",
+  "evaluasi-akip": "Evaluasi AKIP",
 };
 
 function escapeHtml(value) {
@@ -135,6 +250,63 @@ function renderIndicatorList(indicators) {
         .join("")}
     </ul>
   `;
+}
+
+function currency(value) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+}
+
+function getIndicatorsByLevel(plan, level) {
+  if (!plan) return [];
+  if (level === "strategic") return plan.strategicIndicators;
+  if (level === "program") return plan.programIndicators;
+  return plan.activityIndicators;
+}
+
+function getLevelLabel(level) {
+  return {
+    strategic: "Sasaran Strategis",
+    program: "Sasaran Program",
+    activity: "Sasaran Kegiatan",
+  }[level];
+}
+
+function getSasaranByLevel(plan, level) {
+  if (!plan) return "-";
+  if (level === "strategic") return plan.strategic;
+  if (level === "program") return plan.program;
+  return plan.activity;
+}
+
+function getAgreementPlan(agreement) {
+  return cascades[agreement?.cascadeIndex] || cascades[0];
+}
+
+function getAgreementIndicator(agreement) {
+  const plan = getAgreementPlan(agreement);
+  const indicators = getIndicatorsByLevel(plan, agreement?.indicatorLevel || "activity");
+  return indicators[agreement?.indicatorIndex] || indicators[0] || { name: "-", target: "-" };
+}
+
+function renderRenstraIndicatorList(indicators) {
+  return indicators
+    .map(
+      (indicator) => `
+        <div>
+          <strong>${escapeHtml(indicator.name)}</strong>
+          <ul class="target-list">
+            ${indicator.targets
+              .map((target, index) => `<li><span>Tahun ${index + 1}</span><strong>${escapeHtml(target)}</strong></li>`)
+              .join("")}
+          </ul>
+        </div>
+      `
+    )
+    .join("");
 }
 
 function renderGoals() {
@@ -186,81 +358,106 @@ function renderPlans() {
     .join("");
 }
 
-function groupCascades() {
-  return cascades.reduce((strategicMap, item) => {
-    if (!strategicMap.has(item.strategic)) {
-      strategicMap.set(item.strategic, {
-        indicators: item.strategicIndicators,
-        programs: new Map(),
-      });
-    }
+function getRenstraYears(item) {
+  const match = String(item.period).match(/(\d{4})\D+(\d{4})/);
+  if (!match) return [1, 2, 3, 4, 5].map((year) => `Tahun ${year}`);
 
-    const strategic = strategicMap.get(item.strategic);
-    if (!strategic.programs.has(item.program)) {
-      strategic.programs.set(item.program, {
-        indicators: item.programIndicators,
-        activities: [],
-      });
-    }
+  const startYear = Number(match[1]);
+  return [0, 1, 2, 3, 4].map((offset) => String(startYear + offset));
+}
 
-    strategic.programs.get(item.program).activities.push(item);
-    return strategicMap;
-  }, new Map());
+function getPerformanceYears() {
+  return [...new Set(renstraItems.flatMap(getRenstraYears))];
+}
+
+function getTargetIndexForYear(item, selectedYear) {
+  const years = getRenstraYears(item);
+  const index = years.indexOf(selectedYear);
+  return index >= 0 ? index : 0;
+}
+
+function renderRenstraIndicatorsForYear(indicators, yearIndex, selectedYear) {
+  return `
+    <ul class="inline-list">
+      ${indicators
+        .map(
+          (indicator) =>
+            `<li><strong>${escapeHtml(indicator.name)}</strong><span>Target ${escapeHtml(selectedYear)}: ${escapeHtml(indicator.targets[yearIndex] || "-")}</span></li>`
+        )
+        .join("")}
+    </ul>
+  `;
+}
+
+function populatePerformanceYearSelect() {
+  const select = document.querySelector("#performanceYearSelect");
+  if (!select) return;
+
+  const currentValue = select.value;
+  const years = getPerformanceYears();
+  select.innerHTML = years.map((year) => `<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`).join("");
+
+  if (years.includes(currentValue)) {
+    select.value = currentValue;
+  } else if (years.includes("2026")) {
+    select.value = "2026";
+  }
 }
 
 function renderPerformanceTree() {
   const performanceTree = document.querySelector("#performanceTree");
-  const grouped = groupCascades();
+  const selectedYear = document.querySelector("#performanceYearSelect")?.value || getPerformanceYears()[0] || "Tahun 1";
 
-  performanceTree.innerHTML = Array.from(grouped.entries())
-    .map(([strategicName, strategic]) => {
-      const programs = Array.from(strategic.programs.entries())
-        .map(([programName, program]) => {
-          const activities = program.activities
-            .map(
-              (activity) => `
-                <li class="org-activity">
-                  <article class="tree-node activity">
-                    <span class="node-level">Sasaran Kegiatan</span>
-                    <strong>${escapeHtml(activity.activity)}</strong>
-                  </article>
-                  <article class="tree-node indicator">
-                    <span class="node-level">Indikator</span>
-                    ${renderIndicatorList(activity.activityIndicators)}
-                    <small>Penanggung jawab: ${escapeHtml(activity.owner)}</small>
-                  </article>
-                </li>
-              `
-            )
-            .join("");
+  if (!renstraItems.length) {
+    performanceTree.innerHTML = "<p class=\"helper-text\">Belum ada data Matriks Renstra untuk ditampilkan.</p>";
+    return;
+  }
 
-          return `
-            <li class="org-program">
-              <article class="tree-node program">
-                <span class="node-level">Sasaran Program</span>
-                <strong>${escapeHtml(programName)}</strong>
-                ${renderIndicatorList(program.indicators)}
-              </article>
-              <ul class="org-activities">${activities}</ul>
-            </li>
-          `;
-        })
-        .join("");
+  const unitName = renstraItems[0]?.unit || "Satuan Kerja";
+  const period = renstraItems[0]?.period || "Renstra";
+  const branches = renstraItems
+    .map((item) => {
+      const yearIndex = getTargetIndexForYear(item, selectedYear);
 
       return `
-        <section class="org-chart">
-          <div class="org-root">
-            <article class="tree-node strategic">
-              <span class="node-level">Sasaran Strategis</span>
-              <strong>${escapeHtml(strategicName)}</strong>
-              ${renderIndicatorList(strategic.indicators)}
-            </article>
-          </div>
-          <ul class="org-programs">${programs}</ul>
-        </section>
+        <li class="org-program renstra-branch">
+          <article class="tree-node strategic">
+            <span class="node-level">Sasaran Strategis</span>
+            <strong>${escapeHtml(item.strategic)}</strong>
+            ${renderRenstraIndicatorsForYear(item.strategicIndicators, yearIndex, selectedYear)}
+          </article>
+          <ul class="org-activities">
+            <li class="org-activity renstra-flow">
+              <article class="tree-node program">
+                <span class="node-level">Sasaran Program</span>
+                <strong>${escapeHtml(item.program)}</strong>
+                ${renderRenstraIndicatorsForYear(item.programIndicators, yearIndex, selectedYear)}
+              </article>
+              <article class="tree-node activity">
+                <span class="node-level">Sasaran Kegiatan</span>
+                <strong>${escapeHtml(item.activity)}</strong>
+                <small>Penanggung jawab: ${escapeHtml(item.owner)}</small>
+                ${renderRenstraIndicatorsForYear(item.activityIndicators, yearIndex, selectedYear)}
+              </article>
+            </li>
+          </ul>
+        </li>
       `;
     })
     .join("");
+
+  performanceTree.innerHTML = `
+    <section class="org-chart unified-tree">
+      <div class="org-root">
+        <article class="tree-node satker-root">
+          <span class="node-level">Renstra Satuan Kerja</span>
+          <strong>${escapeHtml(unitName)}</strong>
+          <small>Periode ${escapeHtml(period)} - Target ${escapeHtml(selectedYear)}</small>
+        </article>
+      </div>
+      <ul class="org-programs unified-branches">${branches}</ul>
+    </section>
+  `;
 }
 
 function populateCascadeSelects() {
@@ -329,6 +526,63 @@ function createSasaranRow(values = {}) {
   list.append(row);
 }
 
+function createRenstraIndicatorRow(type, indicator = {}) {
+  const list = document.querySelector(`[data-renstra-list="${type}"]`);
+  const targets = indicator.targets || ["", "", "", "", ""];
+  const row = document.createElement("div");
+  row.className = "renstra-indicator-row";
+  row.innerHTML = `
+    <label>
+      Indikator
+      <input name="${type}RenstraIndicatorName" value="${escapeHtml(indicator.name || "")}" placeholder="Nama indikator" required />
+    </label>
+    ${targets
+      .map(
+        (target, index) => `
+          <label>
+            Tahun ${index + 1}
+            <input name="${type}RenstraTarget${index + 1}" value="${escapeHtml(target)}" placeholder="Target" required />
+          </label>
+        `
+      )
+      .join("")}
+    <button class="icon-button" data-remove-renstra-indicator type="button" aria-label="Hapus indikator">x</button>
+  `;
+
+  row.querySelector("[data-remove-renstra-indicator]").addEventListener("click", () => {
+    if (list.children.length > 1) row.remove();
+  });
+
+  list.append(row);
+}
+
+function setRenstraIndicatorRows(type, indicators) {
+  const list = document.querySelector(`[data-renstra-list="${type}"]`);
+  list.innerHTML = "";
+  indicators.forEach((indicator) => createRenstraIndicatorRow(type, indicator));
+  if (!indicators.length) createRenstraIndicatorRow(type);
+}
+
+function resetRenstraIndicatorInputs() {
+  document.querySelectorAll("[data-renstra-list]").forEach((list) => {
+    list.innerHTML = "";
+  });
+  createRenstraIndicatorRow("strategic", { name: "Nilai SAKIP satuan kerja", targets: ["82", "84", "86", "88", "90"] });
+  createRenstraIndicatorRow("program", { name: "Persentase program sesuai target", targets: ["90%", "92%", "94%", "96%", "100%"] });
+  createRenstraIndicatorRow("activity", { name: "Jumlah output kegiatan", targets: ["4", "4", "4", "4", "4"] });
+}
+
+function collectRenstraIndicators(type) {
+  return [...document.querySelectorAll(`[name="${type}RenstraIndicatorName"]`)]
+    .map((input, index) => ({
+      name: input.value.trim(),
+      targets: [1, 2, 3, 4, 5].map(
+        (year) => document.querySelectorAll(`[name="${type}RenstraTarget${year}"]`)[index].value.trim()
+      ),
+    }))
+    .filter((indicator) => indicator.name && indicator.targets.every(Boolean));
+}
+
 function setIndicatorRows(type, indicators) {
   const list = document.querySelector(`[data-indicator-list="${type}"]`);
   list.innerHTML = "";
@@ -377,9 +631,14 @@ function collectSasaranTargets(form) {
 
 function refreshCascadeViews() {
   renderPlans();
+  populatePerformanceYearSelect();
   renderPerformanceTree();
   populateCascadeSelects();
   populateAgreementCascadeSelect();
+  populateAgreementIndicatorSelect();
+  populateRealizationCascadeSelect();
+  populateRealizationIndicatorSelect();
+  renderRealizations();
   renderAgreementPreview();
   renderAgreements();
 }
@@ -408,6 +667,157 @@ function fillCascadeForm(plan, index) {
   setIndicatorRows("program", plan.programIndicators);
   setIndicatorRows("activity", plan.activityIndicators);
   document.querySelector("#cascadeForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderRenstraRows() {
+  const rows = document.querySelector("#renstraRows");
+  if (!rows) return;
+
+  rows.innerHTML = renstraItems
+    .map(
+      (item, index) => `
+        <tr>
+          <td>
+            <strong>${escapeHtml(item.period)}</strong>
+            <br />
+            <small>${escapeHtml(item.unit)}</small>
+          </td>
+          <td>${escapeHtml(item.strategic)}</td>
+          <td>${renderRenstraIndicatorList(item.strategicIndicators)}</td>
+          <td>${escapeHtml(item.program)}</td>
+          <td>${renderRenstraIndicatorList(item.programIndicators)}</td>
+          <td>${escapeHtml(item.activity)}</td>
+          <td>${renderRenstraIndicatorList(item.activityIndicators)}</td>
+          <td>${escapeHtml(item.owner)}</td>
+          <td>
+            <div class="row-actions">
+              <button class="ghost-button" data-edit-renstra="${index}" type="button">Edit</button>
+              <button class="ghost-button" data-copy-renstra="${index}" type="button">Kirim ke Rencana</button>
+              <button class="ghost-button" data-delete-renstra="${index}" type="button">Hapus</button>
+            </div>
+          </td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
+function resetRenstraForm() {
+  document.querySelector("#renstraForm").reset();
+  document.querySelector("#renstraEditIndex").value = "";
+  document.querySelector("#saveRenstra").textContent = "Simpan Renstra";
+  document.querySelector("#cancelRenstraEdit").hidden = true;
+  editingRenstraIndex = null;
+  resetRenstraIndicatorInputs();
+}
+
+function fillRenstraForm(item, index) {
+  const form = document.querySelector("#renstraForm");
+  form.elements.renstraPeriod.value = item.period;
+  form.elements.renstraUnit.value = item.unit;
+  form.elements.renstraStrategic.value = item.strategic;
+  form.elements.renstraProgram.value = item.program;
+  form.elements.renstraActivity.value = item.activity;
+  form.elements.renstraOwner.value = item.owner;
+  document.querySelector("#renstraEditIndex").value = index;
+  document.querySelector("#saveRenstra").textContent = "Simpan Perubahan";
+  document.querySelector("#cancelRenstraEdit").hidden = false;
+  editingRenstraIndex = index;
+  setRenstraIndicatorRows("strategic", item.strategicIndicators);
+  setRenstraIndicatorRows("program", item.programIndicators);
+  setRenstraIndicatorRows("activity", item.activityIndicators);
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renstraToCascade(item) {
+  return {
+    strategic: item.strategic,
+    strategicIndicators: item.strategicIndicators.map((indicator) => ({
+      name: indicator.name,
+      target: indicator.targets[0],
+    })),
+    program: item.program,
+    programIndicators: item.programIndicators.map((indicator) => ({
+      name: indicator.name,
+      target: indicator.targets[0],
+    })),
+    activity: item.activity,
+    activityIndicators: item.activityIndicators.map((indicator) => ({
+      name: indicator.name,
+      target: indicator.targets[0],
+    })),
+    owner: item.owner,
+    status: "Dari Renstra",
+  };
+}
+
+function populateRealizationCascadeSelect() {
+  const agreementSelect = document.querySelector("#realizationAgreementSelect");
+  const select = document.querySelector("#realizationCascadeSelect");
+  if (!agreementSelect || !select) return;
+
+  agreementSelect.innerHTML = agreements
+    .map((agreement, index) => `<option value="${index}">${escapeHtml(agreement.number)} - ${escapeHtml(agreement.employeeName)}</option>`)
+    .join("");
+
+  const agreement = agreements[Number(agreementSelect.value)] || agreements[0];
+  const plan = getAgreementPlan(agreement);
+  select.innerHTML = agreement && plan
+    ? `<option value="${agreement.cascadeIndex}">${escapeHtml(getSasaranByLevel(plan, agreement.indicatorLevel))}</option>`
+    : "";
+}
+
+function populateRealizationIndicatorSelect() {
+  const agreementSelect = document.querySelector("#realizationAgreementSelect");
+  const cascadeSelect = document.querySelector("#realizationCascadeSelect");
+  const levelSelect = document.querySelector("#realizationLevelSelect");
+  const indicatorSelect = document.querySelector("#realizationIndicatorSelect");
+  if (!agreementSelect || !cascadeSelect || !levelSelect || !indicatorSelect) return;
+
+  const agreement = agreements[Number(agreementSelect.value)] || agreements[0];
+  const plan = getAgreementPlan(agreement);
+  const indicator = getAgreementIndicator(agreement);
+  levelSelect.innerHTML = agreement
+    ? `<option value="${agreement.indicatorLevel}">${escapeHtml(getLevelLabel(agreement.indicatorLevel))}</option>`
+    : "";
+  cascadeSelect.innerHTML = agreement && plan
+    ? `<option value="${agreement.cascadeIndex}">${escapeHtml(getSasaranByLevel(plan, agreement.indicatorLevel))}</option>`
+    : "";
+  indicatorSelect.innerHTML = agreement
+    ? `<option value="${agreement.indicatorIndex}">${escapeHtml(indicator.name)} - Target ${escapeHtml(indicator.target)}</option>`
+    : "";
+}
+
+function renderRealizations() {
+  const rows = document.querySelector("#realizationRows");
+  if (!rows) return;
+
+  rows.innerHTML = realizations
+    .map((item, index) => {
+      const agreement = agreements[item.agreementIndex] || agreements[0];
+      const plan = getAgreementPlan(agreement);
+      const indicator = getAgreementIndicator(agreement);
+      const sasaran = getSasaranByLevel(plan, agreement?.indicatorLevel || "activity");
+
+      return `
+        <tr>
+          <td>${escapeHtml(item.quarter)}</td>
+          <td>${escapeHtml(sasaran || "-")}</td>
+          <td>${escapeHtml(getLevelLabel(agreement?.indicatorLevel || "activity"))}</td>
+          <td>${escapeHtml(indicator.name)}</td>
+          <td>${escapeHtml(indicator.target)}</td>
+          <td><strong>${escapeHtml(item.achievement)}</strong></td>
+          <td>${currency(item.budget)}</td>
+          <td>${escapeHtml(item.note || "-")}</td>
+          <td>
+            <div class="row-actions">
+              <button class="ghost-button" data-delete-realization="${index}" type="button">Hapus</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
 }
 
 function normalizeKey(value) {
@@ -491,9 +901,40 @@ function indicatorsFromColumns(row, indicatorAliases, targetAliases) {
   }));
 }
 
+function renstraIndicatorsFromColumns(row, indicatorAliases, targetPrefixAliases) {
+  const indicatorText = getField(row, indicatorAliases);
+  const indicators = indicatorText.split("|").map((value) => value.trim()).filter(Boolean);
+
+  return indicators.map((indicator, indicatorIndex) => ({
+    name: indicator,
+    targets: [1, 2, 3, 4, 5].map((year) => {
+      const targetText = getField(
+        row,
+        targetPrefixAliases.flatMap((prefix) => [
+          `${prefix}_t${year}`,
+          `${prefix}_tahun_${year}`,
+          `${prefix}_tahun${year}`,
+          `${prefix}_${year}`,
+        ])
+      );
+      const values = targetText.split("|").map((value) => value.trim()).filter(Boolean);
+      return values[indicatorIndex] || values[0] || "-";
+    }),
+  }));
+}
+
 function addUniqueIndicators(existing, incoming) {
   incoming.forEach((indicator) => {
     const exists = existing.some((item) => item.name === indicator.name && item.target === indicator.target);
+    if (!exists) existing.push(indicator);
+  });
+}
+
+function addUniqueRenstraIndicators(existing, incoming) {
+  incoming.forEach((indicator) => {
+    const exists = existing.some(
+      (item) => item.name === indicator.name && item.targets.join("|") === indicator.targets.join("|")
+    );
     if (!exists) existing.push(indicator);
   });
 }
@@ -540,6 +981,66 @@ function extractCascadesFromRows(rows) {
 
   return [...grouped.values()].filter(
     (plan) => plan.strategicIndicators.length && plan.programIndicators.length && plan.activityIndicators.length
+  );
+}
+
+function extractRenstraFromRows(rows) {
+  const grouped = new Map();
+
+  rows.forEach((row) => {
+    const period = getField(row, ["periode", "periode_renstra", "renstra_period"]) || "2026-2030";
+    const unit = getField(row, ["unit", "satuan_kerja", "satker"]) || "Satuan Kerja";
+    const strategic = getField(row, ["sasaran_strategis", "strategis", "ss"]);
+    const program = getField(row, ["sasaran_program", "program", "sp"]);
+    const activity = getField(row, ["sasaran_kegiatan", "kegiatan", "sk"]);
+    const owner = getField(row, ["penanggung_jawab", "owner", "bidang", "unit_pengampu"]) || "-";
+
+    if (!strategic || !program || !activity) return;
+
+    const key = [period, unit, strategic, program, activity, owner].join("||");
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        period,
+        unit,
+        strategic,
+        program,
+        activity,
+        owner,
+        strategicIndicators: [],
+        programIndicators: [],
+        activityIndicators: [],
+      });
+    }
+
+    const item = grouped.get(key);
+    addUniqueRenstraIndicators(
+      item.strategicIndicators,
+      renstraIndicatorsFromColumns(
+        row,
+        ["indikator_strategis", "indikator_ss", "iku_strategis"],
+        ["target_strategis", "target_ss"]
+      )
+    );
+    addUniqueRenstraIndicators(
+      item.programIndicators,
+      renstraIndicatorsFromColumns(
+        row,
+        ["indikator_program", "indikator_sp", "iku_program"],
+        ["target_program", "target_sp"]
+      )
+    );
+    addUniqueRenstraIndicators(
+      item.activityIndicators,
+      renstraIndicatorsFromColumns(
+        row,
+        ["indikator_kegiatan", "indikator_sk", "iku_kegiatan"],
+        ["target_kegiatan", "target_sk"]
+      )
+    );
+  });
+
+  return [...grouped.values()].filter(
+    (item) => item.strategicIndicators.length && item.programIndicators.length && item.activityIndicators.length
   );
 }
 
@@ -594,12 +1095,35 @@ function populateAgreementCascadeSelect() {
     .join("");
 }
 
+function populateAgreementIndicatorSelect() {
+  const cascadeSelect = document.querySelector("#agreementCascadeSelect");
+  const levelSelect = document.querySelector("#agreementLevelSelect");
+  const indicatorSelect = document.querySelector("#agreementIndicatorSelect");
+  const targetInput = document.querySelector("#agreementTargetInput");
+  if (!cascadeSelect || !levelSelect || !indicatorSelect || !targetInput) return;
+
+  const plan = cascades[Number(cascadeSelect.value)] || cascades[0];
+  const indicators = getIndicatorsByLevel(plan, levelSelect.value);
+  const previousValue = indicatorSelect.value;
+  indicatorSelect.innerHTML = indicators
+    .map((indicator, index) => `<option value="${index}">${escapeHtml(indicator.name)}</option>`)
+    .join("");
+
+  if (indicators[Number(previousValue)]) indicatorSelect.value = previousValue;
+  const selected = indicators[Number(indicatorSelect.value)] || indicators[0];
+  targetInput.value = selected?.target || "";
+}
+
 function renderAgreementPreview() {
   const preview = document.querySelector("#agreementPreview");
   const select = document.querySelector("#agreementCascadeSelect");
   if (!preview || !select) return;
 
   const plan = cascades[Number(select.value)] || cascades[0];
+  const level = document.querySelector("#agreementLevelSelect")?.value || "activity";
+  const indicatorIndex = Number(document.querySelector("#agreementIndicatorSelect")?.value || 0);
+  const indicator = getIndicatorsByLevel(plan, level)[indicatorIndex] || { name: "-", target: "-" };
+  const target = document.querySelector("#agreementTargetInput")?.value || indicator.target;
   if (!plan) {
     preview.innerHTML = "<p class=\"helper-text\">Belum ada sasaran kinerja yang tersedia.</p>";
     return;
@@ -607,18 +1131,13 @@ function renderAgreementPreview() {
 
   preview.innerHTML = `
     <div class="agreement-summary">
-      <strong>${escapeHtml(plan.strategic)}</strong>
-      <span>Sasaran strategis</span>
+      <strong>${escapeHtml(getSasaranByLevel(plan, level))}</strong>
+      <span>${escapeHtml(getLevelLabel(level))}</span>
     </div>
     <div class="agreement-summary">
-      <strong>${escapeHtml(plan.program)}</strong>
-      <span>Sasaran program</span>
+      <strong>${escapeHtml(indicator.name)}</strong>
+      <span>Target tahunan: ${escapeHtml(target)}</span>
     </div>
-    <div class="agreement-summary">
-      <strong>${escapeHtml(plan.activity)}</strong>
-      <span>Sasaran kegiatan - ${escapeHtml(plan.owner)}</span>
-    </div>
-    ${renderIndicatorList(plan.activityIndicators)}
   `;
 }
 
@@ -628,7 +1147,8 @@ function renderAgreements() {
 
   rows.innerHTML = agreements
     .map((agreement, index) => {
-      const plan = cascades[agreement.cascadeIndex] || cascades[0];
+      const plan = getAgreementPlan(agreement);
+      const indicator = getAgreementIndicator(agreement);
       return `
         <tr>
           <td>
@@ -646,8 +1166,10 @@ function renderAgreements() {
             <br />
             <small>${escapeHtml(agreement.employeePosition)}</small>
           </td>
-          <td>${plan ? escapeHtml(plan.activity) : "-"}</td>
-          <td>${plan ? renderIndicatorList(plan.activityIndicators) : "-"}</td>
+          <td>${plan ? escapeHtml(getSasaranByLevel(plan, agreement.indicatorLevel)) : "-"}</td>
+          <td>${escapeHtml(getLevelLabel(agreement.indicatorLevel))}</td>
+          <td>${escapeHtml(indicator.name)}</td>
+          <td><strong>${escapeHtml(agreement.target || indicator.target)}</strong></td>
           <td><span class="badge">${escapeHtml(agreement.status)}</span></td>
           <td>
             <div class="row-actions">
@@ -668,6 +1190,7 @@ function resetAgreementForm() {
   document.querySelector("#saveAgreement").textContent = "Simpan Perjanjian";
   document.querySelector("#cancelAgreementEdit").hidden = true;
   editingAgreementIndex = null;
+  populateAgreementIndicatorSelect();
   renderAgreementPreview();
 }
 
@@ -680,6 +1203,10 @@ function fillAgreementForm(agreement, index) {
   form.elements.employeeName.value = agreement.employeeName;
   form.elements.employeePosition.value = agreement.employeePosition;
   form.elements.agreementCascade.value = agreement.cascadeIndex;
+  form.elements.agreementLevel.value = agreement.indicatorLevel || "activity";
+  populateAgreementIndicatorSelect();
+  form.elements.agreementIndicator.value = agreement.indicatorIndex || 0;
+  form.elements.agreementTarget.value = agreement.target || getAgreementIndicator(agreement).target;
   document.querySelector("#agreementEditIndex").value = index;
   document.querySelector("#saveAgreement").textContent = "Simpan Perubahan";
   document.querySelector("#cancelAgreementEdit").hidden = false;
@@ -732,6 +1259,8 @@ document.querySelectorAll(".nav-item").forEach((button) => {
   button.addEventListener("click", () => switchPage(button.dataset.page));
 });
 
+document.querySelector("#performanceYearSelect").addEventListener("change", renderPerformanceTree);
+
 document.querySelector("#openEntry").addEventListener("click", () => {
   document.querySelector("#entryDialog").showModal();
 });
@@ -739,13 +1268,31 @@ document.querySelector("#openEntry").addEventListener("click", () => {
 document.querySelector("#realizationForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
-  const indicator = form.get("indicator");
-  const value = form.get("value");
-
-  if (!indicator || !value) return;
-
-  alert(`Realisasi ${value}% untuk "${indicator}" berhasil disimpan pada prototype.`);
+  realizations.unshift({
+    quarter: form.get("quarter"),
+    agreementIndex: Number(form.get("agreementIndex")),
+    achievement: form.get("achievement"),
+    budget: Number(form.get("budget")),
+    note: form.get("note"),
+  });
+  renderRealizations();
   event.currentTarget.reset();
+  populateRealizationIndicatorSelect();
+  alert("Realisasi kinerja triwulanan berhasil disimpan.");
+});
+
+document.querySelector("#realizationAgreementSelect").addEventListener("change", populateRealizationIndicatorSelect);
+
+document.querySelector("#realizationRows").addEventListener("click", (event) => {
+  const deleteButton = event.target.closest("[data-delete-realization]");
+  if (!deleteButton) return;
+  realizations.splice(Number(deleteButton.dataset.deleteRealization), 1);
+  renderRealizations();
+});
+
+document.querySelector("#resetRealizations").addEventListener("click", () => {
+  realizations = structuredClone(defaultRealizations);
+  renderRealizations();
 });
 
 document.querySelectorAll("[data-add-indicator]").forEach((button) => {
@@ -753,6 +1300,10 @@ document.querySelectorAll("[data-add-indicator]").forEach((button) => {
 });
 
 document.querySelector("#addSasaran").addEventListener("click", () => createSasaranRow());
+
+document.querySelectorAll("[data-add-renstra-indicator]").forEach((button) => {
+  button.addEventListener("click", () => createRenstraIndicatorRow(button.dataset.addRenstraIndicator));
+});
 
 document.querySelector("#planRows").addEventListener("click", (event) => {
   const editButton = event.target.closest("[data-edit-plan]");
@@ -819,6 +1370,80 @@ document.querySelector("#resetCascade").addEventListener("click", () => {
 
 document.querySelector("#cancelEdit").addEventListener("click", resetCascadeForm);
 
+document.querySelector("#renstraForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const strategicIndicators = collectRenstraIndicators("strategic");
+  const programIndicators = collectRenstraIndicators("program");
+  const activityIndicators = collectRenstraIndicators("activity");
+
+  if (!strategicIndicators.length || !programIndicators.length || !activityIndicators.length) {
+    alert("Setiap level sasaran Renstra harus memiliki minimal satu indikator dan target 5 tahun.");
+    return;
+  }
+
+  const payload = {
+    period: form.get("renstraPeriod"),
+    unit: form.get("renstraUnit"),
+    strategic: form.get("renstraStrategic"),
+    program: form.get("renstraProgram"),
+    activity: form.get("renstraActivity"),
+    owner: form.get("renstraOwner"),
+    strategicIndicators,
+    programIndicators,
+    activityIndicators,
+  };
+
+  if (editingRenstraIndex === null) {
+    renstraItems.unshift(payload);
+  } else {
+    renstraItems[editingRenstraIndex] = payload;
+  }
+
+  renderRenstraRows();
+  populatePerformanceYearSelect();
+  renderPerformanceTree();
+  resetRenstraForm();
+  alert("Matriks Renstra berhasil disimpan.");
+});
+
+document.querySelector("#renstraRows").addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-edit-renstra]");
+  const copyButton = event.target.closest("[data-copy-renstra]");
+  const deleteButton = event.target.closest("[data-delete-renstra]");
+
+  if (editButton) {
+    const index = Number(editButton.dataset.editRenstra);
+    fillRenstraForm(renstraItems[index], index);
+  }
+
+  if (copyButton) {
+    const index = Number(copyButton.dataset.copyRenstra);
+    cascades.unshift(renstraToCascade(renstraItems[index]));
+    refreshCascadeViews();
+    alert("Data Renstra Tahun 1 berhasil dikirim ke Rencana Kinerja.");
+  }
+
+  if (deleteButton) {
+    const index = Number(deleteButton.dataset.deleteRenstra);
+    renstraItems.splice(index, 1);
+    renderRenstraRows();
+    populatePerformanceYearSelect();
+    renderPerformanceTree();
+    if (editingRenstraIndex === index) resetRenstraForm();
+  }
+});
+
+document.querySelector("#resetRenstra").addEventListener("click", () => {
+  renstraItems = structuredClone(defaultRenstra);
+  renderRenstraRows();
+  populatePerformanceYearSelect();
+  renderPerformanceTree();
+  resetRenstraForm();
+});
+
+document.querySelector("#cancelRenstraEdit").addEventListener("click", resetRenstraForm);
+
 document.querySelector("#matrixFile").addEventListener("change", async (event) => {
   const [file] = event.target.files;
   if (!file) return;
@@ -853,22 +1478,36 @@ document.querySelector("#clearMatrix").addEventListener("click", () => {
 document.querySelector("#importMatrix").addEventListener("click", () => {
   try {
     const rows = parseMatrixText(document.querySelector("#matrixText").value);
-    const imported = extractCascadesFromRows(rows);
+    const imported = extractRenstraFromRows(rows);
 
     if (!imported.length) {
-      alert("Matriks belum bisa diekstrak. Periksa nama kolom dan isi sasaran/indikator/target.");
+      alert("Matriks Renstra belum bisa diekstrak. Periksa nama kolom, sasaran, indikator, dan target 5 tahun.");
       return;
     }
 
-    cascades = [...imported, ...cascades];
-    refreshCascadeViews();
-    alert(`${imported.length} baris cascading berhasil diekstrak dan diinput otomatis.`);
+    renstraItems = [...imported, ...renstraItems];
+    renderRenstraRows();
+    populatePerformanceYearSelect();
+    renderPerformanceTree();
+    alert(`${imported.length} baris Matriks Renstra berhasil diekstrak dan diinput otomatis.`);
   } catch (error) {
-    alert(`Gagal membaca matriks: ${error.message}`);
+    alert(`Gagal membaca Matriks Renstra: ${error.message}`);
   }
 });
 
-document.querySelector("#agreementCascadeSelect").addEventListener("change", renderAgreementPreview);
+document.querySelector("#agreementCascadeSelect").addEventListener("change", () => {
+  populateAgreementIndicatorSelect();
+  renderAgreementPreview();
+});
+document.querySelector("#agreementLevelSelect").addEventListener("change", () => {
+  populateAgreementIndicatorSelect();
+  renderAgreementPreview();
+});
+document.querySelector("#agreementIndicatorSelect").addEventListener("change", () => {
+  populateAgreementIndicatorSelect();
+  renderAgreementPreview();
+});
+document.querySelector("#agreementTargetInput").addEventListener("input", renderAgreementPreview);
 
 document.querySelector("#agreementForm").addEventListener("submit", (event) => {
   event.preventDefault();
@@ -881,6 +1520,9 @@ document.querySelector("#agreementForm").addEventListener("submit", (event) => {
     employeeName: form.get("employeeName"),
     employeePosition: form.get("employeePosition"),
     cascadeIndex: Number(form.get("agreementCascade")),
+    indicatorLevel: form.get("agreementLevel"),
+    indicatorIndex: Number(form.get("agreementIndicator")),
+    target: form.get("agreementTarget"),
     status: editingAgreementIndex === null ? "Draft" : agreements[editingAgreementIndex].status,
   };
 
@@ -891,6 +1533,9 @@ document.querySelector("#agreementForm").addEventListener("submit", (event) => {
   }
 
   renderAgreements();
+  populateRealizationCascadeSelect();
+  populateRealizationIndicatorSelect();
+  renderRealizations();
   resetAgreementForm();
   alert("Perjanjian kinerja berhasil disimpan.");
 });
@@ -909,12 +1554,16 @@ document.querySelector("#agreementRows").addEventListener("click", (event) => {
     const index = Number(signButton.dataset.signAgreement);
     agreements[index].status = agreements[index].status === "Ditandatangani" ? "Menunggu Tanda Tangan" : "Ditandatangani";
     renderAgreements();
+    renderRealizations();
   }
 
   if (deleteButton) {
     const index = Number(deleteButton.dataset.deleteAgreement);
     agreements.splice(index, 1);
     renderAgreements();
+    populateRealizationCascadeSelect();
+    populateRealizationIndicatorSelect();
+    renderRealizations();
     if (editingAgreementIndex === index) resetAgreementForm();
   }
 });
@@ -922,6 +1571,9 @@ document.querySelector("#agreementRows").addEventListener("click", (event) => {
 document.querySelector("#resetAgreements").addEventListener("click", () => {
   agreements = structuredClone(defaultAgreements);
   renderAgreements();
+  populateRealizationCascadeSelect();
+  populateRealizationIndicatorSelect();
+  renderRealizations();
   resetAgreementForm();
 });
 
@@ -930,9 +1582,16 @@ document.querySelector("#cancelAgreementEdit").addEventListener("click", resetAg
 renderGoals();
 populateCascadeSelects();
 populateAgreementCascadeSelect();
+populateAgreementIndicatorSelect();
+populateRealizationCascadeSelect();
+populateRealizationIndicatorSelect();
+populatePerformanceYearSelect();
 resetIndicatorInputs();
+resetRenstraIndicatorInputs();
 renderPlans();
 renderPerformanceTree();
+renderRenstraRows();
+renderRealizations();
 renderAgreementPreview();
 renderAgreements();
 renderDocuments();

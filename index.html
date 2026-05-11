@@ -19,22 +19,28 @@
 
         <nav class="nav-list">
           <button class="nav-item active" data-page="dashboard" type="button">
-            <span>Dashboard</span>
+            <span>Dashboard Kinerja</span>
+          </button>
+          <button class="nav-item" data-page="renstra" type="button">
+            <span>Matriks Renstra</span>
           </button>
           <button class="nav-item" data-page="rencana" type="button">
-            <span>Rencana Kinerja</span>
+            <span>Rencana Kinerja Tahunan</span>
           </button>
           <button class="nav-item" data-page="perjanjian" type="button">
             <span>Perjanjian Kinerja</span>
           </button>
           <button class="nav-item" data-page="realisasi" type="button">
-            <span>Realisasi</span>
+            <span>Realisasi Kinerja</span>
           </button>
           <button class="nav-item" data-page="eviden" type="button">
-            <span>Dokumen Eviden</span>
+            <span>Dokumen AKIP</span>
           </button>
           <button class="nav-item" data-page="evaluasi" type="button">
-            <span>Evaluasi</span>
+            <span>Monitoring dan Evaluasi</span>
+          </button>
+          <button class="nav-item" data-page="evaluasi-akip" type="button">
+            <span>Evaluasi AKIP</span>
           </button>
         </nav>
 
@@ -122,42 +128,18 @@
             <div class="panel-header">
               <div>
                 <h2>Pohon Kinerja</h2>
-                <p class="panel-copy">Cascading sasaran strategis, sasaran program, sasaran kegiatan, dan indikator.</p>
+                <p class="panel-copy">Sasaran, indikator, dan target bersumber dari Matriks Renstra satuan kerja.</p>
               </div>
-              <span class="badge">Terintegrasi Rencana Kinerja</span>
+              <div class="tree-actions">
+                <select id="performanceYearSelect" aria-label="Pilih tahun target pohon kinerja"></select>
+                <span class="badge">Terintegrasi Renstra</span>
+              </div>
             </div>
             <div class="performance-tree" id="performanceTree"></div>
           </section>
         </section>
 
         <section class="content-page" id="rencana">
-          <section class="panel">
-            <div class="panel-header">
-              <div>
-                <h2>Impor Matriks Kinerja</h2>
-                <p class="panel-copy">Unggah CSV/TSV/JSON atau tempel data dari Excel untuk ekstraksi otomatis.</p>
-              </div>
-              <span class="badge">Ekstraksi Dokumen</span>
-            </div>
-            <div class="import-grid">
-              <label>
-                File Matriks
-                <input id="matrixFile" type="file" accept=".csv,.tsv,.txt,.json,.pdf,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
-              </label>
-              <label class="full-span">
-                Tempel Matriks
-                <textarea id="matrixText" rows="6" placeholder="sasaran_strategis	indikator_strategis	target_strategis	sasaran_program	indikator_program	target_program	sasaran_kegiatan	indikator_kegiatan	target_kegiatan	penanggung_jawab"></textarea>
-              </label>
-              <div class="import-actions full-span">
-                <button class="primary-button" id="importMatrix" type="button">Ekstrak dan Input Otomatis</button>
-                <button class="ghost-button" id="clearMatrix" type="button">Bersihkan</button>
-              </div>
-              <p class="helper-text full-span">
-                Format: Excel, CSV, TSV, TXT, JSON, PDF. Kolom yang dibaca: sasaran_strategis, indikator_strategis, target_strategis, sasaran_program, indikator_program, target_program, sasaran_kegiatan, indikator_kegiatan, target_kegiatan, penanggung_jawab.
-              </p>
-            </div>
-          </section>
-
           <section class="panel">
             <div class="panel-header">
               <div>
@@ -239,6 +221,116 @@
           </section>
         </section>
 
+        <section class="content-page" id="renstra">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Impor Matriks Renstra</h2>
+                <p class="panel-copy">Unggah Excel, CSV, PDF, JSON, atau tempel matriks Renstra untuk ekstraksi otomatis.</p>
+              </div>
+              <span class="badge">Ekstraksi Renstra</span>
+            </div>
+            <div class="import-grid">
+              <label>
+                File Matriks Renstra
+                <input id="matrixFile" type="file" accept=".csv,.tsv,.txt,.json,.pdf,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+              </label>
+              <label class="full-span">
+                Tempel Matriks Renstra
+                <textarea id="matrixText" rows="6" placeholder="periode	unit	sasaran_strategis	indikator_strategis	target_strategis_t1	target_strategis_t2	target_strategis_t3	target_strategis_t4	target_strategis_t5	sasaran_program	indikator_program	target_program_t1	target_program_t2	target_program_t3	target_program_t4	target_program_t5	sasaran_kegiatan	indikator_kegiatan	target_kegiatan_t1	target_kegiatan_t2	target_kegiatan_t3	target_kegiatan_t4	target_kegiatan_t5	penanggung_jawab"></textarea>
+              </label>
+              <div class="import-actions full-span">
+                <button class="primary-button" id="importMatrix" type="button">Ekstrak dan Input Renstra</button>
+                <button class="ghost-button" id="clearMatrix" type="button">Bersihkan</button>
+              </div>
+              <p class="helper-text full-span">
+                Kolom: periode, unit, sasaran_strategis, indikator_strategis, target_strategis_t1 sampai target_strategis_t5, sasaran_program, indikator_program, target_program_t1 sampai target_program_t5, sasaran_kegiatan, indikator_kegiatan, target_kegiatan_t1 sampai target_kegiatan_t5, penanggung_jawab.
+              </p>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Input Matriks Renstra Satuan Kerja</h2>
+                <p class="panel-copy">Susun sasaran strategis, program, kegiatan, indikator, dan target tahunan selama 5 tahun.</p>
+              </div>
+              <span class="badge">Periode 5 Tahun</span>
+            </div>
+            <form class="renstra-form" id="renstraForm">
+              <input id="renstraEditIndex" type="hidden" value="" />
+              <label>
+                Periode Renstra
+                <input name="renstraPeriod" placeholder="Contoh: 2026-2030" value="2026-2030" required />
+              </label>
+              <label>
+                Unit/Satuan Kerja
+                <input name="renstraUnit" placeholder="Contoh: Kejaksaan Negeri Bandung" required />
+              </label>
+              <label>
+                Sasaran Strategis
+                <input name="renstraStrategic" placeholder="Sasaran strategis satker" required />
+              </label>
+              <label>
+                Sasaran Program
+                <input name="renstraProgram" placeholder="Sasaran program" required />
+              </label>
+              <label>
+                Sasaran Kegiatan
+                <input name="renstraActivity" placeholder="Sasaran kegiatan" required />
+              </label>
+              <label>
+                Penanggung Jawab
+                <input name="renstraOwner" placeholder="Penanggung jawab" required />
+              </label>
+              <fieldset class="indicator-set full-span">
+                <legend>Indikator Sasaran Strategis dan Target 5 Tahun</legend>
+                <div class="renstra-indicator-list" data-renstra-list="strategic"></div>
+                <button class="ghost-button" data-add-renstra-indicator="strategic" type="button">Tambah Indikator Strategis</button>
+              </fieldset>
+              <fieldset class="indicator-set full-span">
+                <legend>Indikator Sasaran Program dan Target 5 Tahun</legend>
+                <div class="renstra-indicator-list" data-renstra-list="program"></div>
+                <button class="ghost-button" data-add-renstra-indicator="program" type="button">Tambah Indikator Program</button>
+              </fieldset>
+              <fieldset class="indicator-set full-span">
+                <legend>Indikator Sasaran Kegiatan dan Target 5 Tahun</legend>
+                <div class="renstra-indicator-list" data-renstra-list="activity"></div>
+                <button class="ghost-button" data-add-renstra-indicator="activity" type="button">Tambah Indikator Kegiatan</button>
+              </fieldset>
+              <div class="form-actions full-span">
+                <button class="primary-button" id="saveRenstra" type="submit">Simpan Renstra</button>
+                <button class="ghost-button" id="cancelRenstraEdit" type="button" hidden>Batal Edit</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Daftar Matriks Renstra</h2>
+              <button class="ghost-button" id="resetRenstra" type="button">Reset Renstra</button>
+            </div>
+            <div class="table-wrap">
+              <table class="renstra-table">
+                <thead>
+                  <tr>
+                    <th>Periode</th>
+                    <th>Sasaran Strategis</th>
+                    <th>Indikator Strategis</th>
+                    <th>Sasaran Program</th>
+                    <th>Indikator Program</th>
+                    <th>Sasaran Kegiatan</th>
+                    <th>Indikator Kegiatan</th>
+                    <th>Penanggung Jawab</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="renstraRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
         <section class="content-page" id="perjanjian">
           <section class="panel">
             <div class="panel-header">
@@ -275,8 +367,24 @@
                 <input name="employeePosition" placeholder="Contoh: Kepala Seksi Pidana Umum" required />
               </label>
               <label class="full-span">
-                Pilih Sasaran Kinerja
+                Sumber Sasaran Kinerja Tahunan
                 <select name="agreementCascade" id="agreementCascadeSelect" required></select>
+              </label>
+              <label>
+                Level Sasaran
+                <select name="agreementLevel" id="agreementLevelSelect" required>
+                  <option value="strategic">Sasaran Strategis</option>
+                  <option value="program">Sasaran Program</option>
+                  <option value="activity">Sasaran Kegiatan</option>
+                </select>
+              </label>
+              <label>
+                Indikator Kinerja
+                <select name="agreementIndicator" id="agreementIndicatorSelect" required></select>
+              </label>
+              <label class="full-span">
+                Target Tahunan
+                <input name="agreementTarget" id="agreementTargetInput" placeholder="Target tahunan dapat diedit manual" required />
               </label>
               <div class="agreement-preview full-span" id="agreementPreview"></div>
               <div class="form-actions full-span">
@@ -299,7 +407,9 @@
                     <th>Atasan</th>
                     <th>Bawahan</th>
                     <th>Sasaran</th>
-                    <th>Indikator Kegiatan</th>
+                    <th>Level</th>
+                    <th>Indikator</th>
+                    <th>Target</th>
                     <th>Status</th>
                     <th>Aksi</th>
                   </tr>
@@ -311,38 +421,86 @@
         </section>
 
         <section class="content-page" id="realisasi">
-          <section class="panel form-panel">
+          <section class="panel">
             <div class="panel-header">
-              <h2>Input Realisasi Kinerja</h2>
-              <span class="badge">Triwulan II</span>
+              <div>
+                <h2>Input Realisasi Kinerja Triwulanan</h2>
+                <p class="panel-copy">Catat capaian indikator pada sasaran strategis, program, kegiatan, dan realisasi anggaran per triwulan.</p>
+              </div>
+              <span class="badge">Per Sasaran</span>
             </div>
-            <form id="realizationForm">
+            <form class="realization-form" id="realizationForm">
               <label>
-                Indikator
-                <select name="indicator" required>
-                  <option value="">Pilih indikator</option>
-                  <option>Persentase penyelesaian perkara tepat waktu</option>
-                  <option>Nilai kepatuhan pelaporan kinerja</option>
-                  <option>Indeks kepuasan layanan publik</option>
+                Triwulan
+                <select name="quarter" required>
+                  <option>Triwulan I</option>
+                  <option>Triwulan II</option>
+                  <option>Triwulan III</option>
+                  <option>Triwulan IV</option>
                 </select>
               </label>
               <label>
-                Realisasi
-                <input name="value" type="number" min="0" max="100" placeholder="Contoh: 86" required />
+                Perjanjian Kinerja
+                <select name="agreementIndex" id="realizationAgreementSelect" required></select>
               </label>
               <label>
+                Level Indikator
+                <select name="indicatorLevel" id="realizationLevelSelect" required></select>
+              </label>
+              <label>
+                Sasaran
+                <select name="cascadeIndex" id="realizationCascadeSelect" required></select>
+              </label>
+              <label>
+                Indikator Kinerja
+                <select name="indicatorIndex" id="realizationIndicatorSelect" required></select>
+              </label>
+              <label>
+                Capaian Indikator
+                <input name="achievement" placeholder="Contoh: 86% atau 24 laporan" required />
+              </label>
+              <label>
+                Realisasi Anggaran
+                <input name="budget" type="number" min="0" placeholder="Contoh: 125000000" required />
+              </label>
+              <label class="full-span">
                 Keterangan
                 <textarea name="note" rows="4" placeholder="Ringkasan capaian, kendala, dan tindak lanjut"></textarea>
               </label>
-              <button class="primary-button" type="submit">Simpan Realisasi</button>
+              <button class="primary-button" type="submit">Simpan Realisasi Triwulan</button>
             </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <h2>Riwayat Realisasi Kinerja</h2>
+              <button class="ghost-button" id="resetRealizations" type="button">Reset Realisasi</button>
+            </div>
+            <div class="table-wrap">
+              <table class="realization-table">
+                <thead>
+                  <tr>
+                    <th>Triwulan</th>
+                    <th>Sasaran</th>
+                    <th>Level</th>
+                    <th>Indikator</th>
+                    <th>Target</th>
+                    <th>Capaian</th>
+                    <th>Anggaran</th>
+                    <th>Keterangan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="realizationRows"></tbody>
+              </table>
+            </div>
           </section>
         </section>
 
         <section class="content-page" id="eviden">
           <section class="panel">
             <div class="panel-header">
-              <h2>Dokumen Eviden</h2>
+              <h2>Dokumen AKIP</h2>
               <button class="primary-button small" type="button">Unggah Dokumen</button>
             </div>
             <div class="document-grid" id="documentGrid"></div>
@@ -352,10 +510,36 @@
         <section class="content-page" id="evaluasi">
           <section class="panel">
             <div class="panel-header">
-              <h2>Evaluasi dan Tindak Lanjut</h2>
+              <h2>Monitoring dan Evaluasi</h2>
               <button class="primary-button small" type="button">Buat Catatan</button>
             </div>
             <div class="review-list" id="reviewList"></div>
+          </section>
+        </section>
+
+        <section class="content-page" id="evaluasi-akip">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Evaluasi AKIP</h2>
+                <p class="panel-copy">Penilaian akuntabilitas kinerja satker berdasarkan komponen perencanaan, pengukuran, pelaporan, dan evaluasi internal.</p>
+              </div>
+              <button class="primary-button small" type="button">Input Nilai</button>
+            </div>
+            <div class="review-list" id="akipReviewList">
+              <article class="review-item">
+                <strong>Perencanaan Kinerja</strong>
+                <p>Nilai sementara 27.5 dari 30. Perlu penyelarasan target tahunan dengan Renstra.</p>
+              </article>
+              <article class="review-item">
+                <strong>Pengukuran Kinerja</strong>
+                <p>Nilai sementara 24 dari 30. Indikator kegiatan sudah tersedia, realisasi triwulan perlu dilengkapi.</p>
+              </article>
+              <article class="review-item">
+                <strong>Pelaporan dan Evaluasi Internal</strong>
+                <p>Nilai sementara 31 dari 40. Eviden tindak lanjut evaluasi perlu diperkuat.</p>
+              </article>
+            </div>
           </section>
         </section>
       </section>

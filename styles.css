@@ -321,15 +321,26 @@ textarea {
   margin-top: 16px;
 }
 
+.tree-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tree-actions select {
+  min-width: 120px;
+}
+
 .performance-tree {
   display: grid;
-  gap: 22px;
+  gap: 14px;
   overflow-x: auto;
-  padding: 8px 2px 6px;
+  padding: 6px 2px;
 }
 
 .org-chart {
-  min-width: 980px;
+  min-width: 1180px;
   border: 1px solid #dbe4ef;
   border-radius: 8px;
   background:
@@ -337,14 +348,18 @@ textarea {
     linear-gradient(90deg, #edf2f7 1px, transparent 1px),
     #fbfcfe;
   background-size: 26px 26px;
-  padding: 22px;
+  padding: 16px;
+}
+
+.unified-tree {
+  min-width: 1320px;
 }
 
 .org-root {
   display: flex;
   justify-content: center;
   position: relative;
-  padding-bottom: 34px;
+  padding-bottom: 26px;
 }
 
 .org-root::after {
@@ -352,7 +367,7 @@ textarea {
   bottom: 0;
   left: 50%;
   width: 2px;
-  height: 34px;
+  height: 26px;
   background: #a9b8ca;
   content: "";
 }
@@ -367,8 +382,8 @@ textarea {
 .org-programs {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(3, minmax(260px, 1fr));
-  gap: 22px;
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
+  gap: 14px;
 }
 
 .org-programs::before {
@@ -384,8 +399,8 @@ textarea {
 .org-program {
   position: relative;
   display: grid;
-  gap: 22px;
-  padding-top: 34px;
+  gap: 14px;
+  padding-top: 26px;
 }
 
 .org-program::before {
@@ -393,21 +408,21 @@ textarea {
   top: 0;
   left: 50%;
   width: 2px;
-  height: 34px;
+  height: 26px;
   background: #a9b8ca;
   content: "";
 }
 
 .org-activities {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .org-activity {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   align-items: stretch;
 }
 
@@ -421,24 +436,14 @@ textarea {
   content: "";
 }
 
-.org-activity::after {
-  position: absolute;
-  top: 50%;
-  left: calc(50% - 6px);
-  width: 12px;
-  height: 2px;
-  background: #c3cedc;
-  content: "";
-}
-
 .tree-node {
   position: relative;
-  min-height: 112px;
+  min-height: 86px;
   border: 1px solid #d6dfeb;
   border-radius: 8px;
   background: #fff;
-  box-shadow: 0 14px 32px rgba(20, 33, 61, 0.1);
-  padding: 14px;
+  box-shadow: 0 10px 22px rgba(20, 33, 61, 0.08);
+  padding: 10px;
 }
 
 .tree-node strong,
@@ -448,14 +453,15 @@ textarea {
 }
 
 .tree-node strong {
-  margin-top: 8px;
+  margin-top: 6px;
+  font-size: 13px;
   line-height: 1.35;
 }
 
 .tree-node small {
-  margin-top: 8px;
+  margin-top: 6px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 11px;
   line-height: 1.35;
 }
 
@@ -465,15 +471,20 @@ textarea {
   border-radius: 999px;
   background: var(--surface-soft);
   color: var(--muted);
-  padding: 4px 8px;
-  font-size: 11px;
+  padding: 3px 7px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .tree-node.strategic {
-  width: min(520px, 100%);
+  width: min(460px, 100%);
   border-top: 5px solid var(--accent);
+}
+
+.tree-node.satker-root {
+  width: min(360px, 100%);
+  border-top: 5px solid #14213d;
 }
 
 .tree-node.program {
@@ -491,8 +502,8 @@ textarea {
 
 .inline-list {
   display: grid;
-  gap: 7px;
-  margin: 8px 0 0;
+  gap: 5px;
+  margin: 6px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -500,7 +511,7 @@ textarea {
 .inline-list li {
   border-radius: 8px;
   background: rgba(240, 244, 248, 0.82);
-  padding: 8px;
+  padding: 6px;
 }
 
 .inline-list strong,
@@ -509,13 +520,14 @@ textarea {
 }
 
 .inline-list strong {
+  font-size: 12px;
   line-height: 1.35;
 }
 
 .inline-list span {
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .table-wrap {
@@ -558,7 +570,9 @@ th {
 }
 
 .cascade-form,
-.agreement-form {
+.agreement-form,
+.renstra-form,
+.realization-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
@@ -567,6 +581,8 @@ th {
 
 .cascade-form .primary-button,
 .agreement-form .primary-button,
+.renstra-form .primary-button,
+.realization-form .primary-button,
 .form-actions,
 .import-actions {
   align-self: end;
@@ -575,6 +591,8 @@ th {
 .full-span,
 .cascade-form .primary-button,
 .agreement-form .primary-button,
+.renstra-form .primary-button,
+.realization-form .primary-button,
 .form-actions,
 .import-actions {
   grid-column: 1 / -1;
@@ -607,6 +625,14 @@ th {
 
 .agreement-table {
   min-width: 1100px;
+}
+
+.renstra-table {
+  min-width: 1400px;
+}
+
+.realization-table {
+  min-width: 1200px;
 }
 
 .import-grid {
@@ -650,9 +676,39 @@ th {
 }
 
 .indicator-list,
-.sasaran-list {
+.sasaran-list,
+.renstra-indicator-list {
   display: grid;
   gap: 10px;
+}
+
+.renstra-indicator-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(88px, 0.5fr)) 36px;
+  gap: 8px;
+  align-items: end;
+}
+
+.renstra-indicator-row .icon-button {
+  align-self: end;
+}
+
+.target-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.target-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 8px;
+  background: rgba(240, 244, 248, 0.82);
+  padding: 7px 8px;
+  font-size: 13px;
 }
 
 .sasaran-row {
@@ -759,16 +815,18 @@ dialog::backdrop {
   .document-grid,
   .cascade-form,
   .agreement-form,
+  .renstra-form,
+  .realization-form,
   .import-grid {
     grid-template-columns: 1fr 1fr;
   }
 
   .org-chart {
-    min-width: 900px;
+    min-width: 1180px;
   }
 
   .org-programs {
-    grid-template-columns: repeat(3, minmax(250px, 1fr));
+    grid-template-columns: repeat(5, minmax(220px, 1fr));
   }
 }
 
@@ -793,24 +851,23 @@ dialog::backdrop {
   .document-grid,
   .cascade-form,
   .agreement-form,
+  .renstra-form,
+  .realization-form,
   .import-grid {
     grid-template-columns: 1fr;
   }
 
   .indicator-row,
-  .sasaran-row {
+  .sasaran-row,
+  .renstra-indicator-row {
     grid-template-columns: 1fr;
   }
 
   .org-chart {
-    min-width: 820px;
+    min-width: 1120px;
   }
 
   .org-activity {
     grid-template-columns: 1fr;
-  }
-
-  .org-activity::after {
-    display: none;
   }
 }
