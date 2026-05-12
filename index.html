@@ -72,57 +72,37 @@
         <section class="content-page active" id="dashboard">
           <div class="metric-grid">
             <article class="metric">
-              <span>Capaian Kinerja</span>
-              <strong>87.4%</strong>
-              <small>Naik 6.2% dari triwulan lalu</small>
+              <span>Rata-rata Capaian Strategis</span>
+              <strong id="strategicAverageMetric">0%</strong>
+              <small>Bersumber dari realisasi PK strategis</small>
             </article>
             <article class="metric">
-              <span>Indikator Aktif</span>
-              <strong>24</strong>
-              <small>18 on-track, 6 perlu perhatian</small>
+              <span>Sasaran Strategis Terealisasi</span>
+              <strong id="strategicGoalMetric">0</strong>
+              <small>Hanya PK yang sudah ditandatangani</small>
             </article>
             <article class="metric">
-              <span>Dokumen Eviden</span>
-              <strong>156</strong>
-              <small>42 menunggu verifikasi</small>
+              <span>Indikator Strategis</span>
+              <strong id="strategicIndicatorMetric">0</strong>
+              <small>Sudah memiliki capaian triwulan</small>
             </article>
             <article class="metric warning">
-              <span>Catatan Evaluasi</span>
-              <strong>9</strong>
-              <small>Perlu tindak lanjut bulan ini</small>
+              <span>Perlu Perhatian</span>
+              <strong id="strategicRiskMetric">0</strong>
+              <small>Capaian di bawah 85%</small>
             </article>
           </div>
 
-          <div class="two-column">
-            <section class="panel">
-              <div class="panel-header">
-                <h2>Progress Sasaran Strategis</h2>
-                <button class="ghost-button" type="button">Lihat Semua</button>
+          <section class="panel strategic-dashboard-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Capaian Sasaran Strategis</h2>
+                <p class="panel-copy">Diagram hanya menampilkan capaian sasaran strategis yang tersinkron dari menu Realisasi Kinerja.</p>
               </div>
-              <div class="goal-list" id="goalList"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-header">
-                <h2>Agenda Pelaporan</h2>
-                <button class="ghost-button" type="button">Tambah</button>
-              </div>
-              <ol class="timeline">
-                <li>
-                  <time>15 Mei</time>
-                  <span>Finalisasi realisasi triwulan II</span>
-                </li>
-                <li>
-                  <time>22 Mei</time>
-                  <span>Review eviden capaian indikator</span>
-                </li>
-                <li>
-                  <time>30 Mei</time>
-                  <span>Rapat evaluasi kinerja unit</span>
-                </li>
-              </ol>
-            </section>
-          </div>
+              <span class="badge">Merah &lt;60, Kuning &lt;85, Hijau >=85</span>
+            </div>
+            <div class="strategic-dashboard" id="goalList"></div>
+          </section>
 
           <section class="panel performance-tree-panel">
             <div class="panel-header">
@@ -137,6 +117,7 @@
             </div>
             <div class="performance-tree" id="performanceTree"></div>
           </section>
+
         </section>
 
         <section class="content-page" id="rencana">
@@ -425,7 +406,7 @@
             <div class="panel-header">
               <div>
                 <h2>Input Realisasi Kinerja Triwulanan</h2>
-                <p class="panel-copy">Catat capaian indikator pada sasaran strategis, program, kegiatan, dan realisasi anggaran per triwulan.</p>
+                <p class="panel-copy">Catat capaian indikator berdasarkan Perjanjian Kinerja yang sudah ditandatangani.</p>
               </div>
               <span class="badge">Per Sasaran</span>
             </div>

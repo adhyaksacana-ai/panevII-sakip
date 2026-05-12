@@ -317,6 +317,131 @@ textarea {
   font-weight: 800;
 }
 
+.strategic-dashboard-panel {
+  margin-bottom: 16px;
+}
+
+.strategic-dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 14px;
+}
+
+.strategic-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  min-height: 168px;
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--status-color);
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+}
+
+.strategic-card.green {
+  --status-color: #16833a;
+  --status-soft: #e8f6ed;
+}
+
+.strategic-card.yellow {
+  --status-color: #d59a00;
+  --status-soft: #fff6d8;
+}
+
+.strategic-card.red {
+  --status-color: #c62828;
+  --status-soft: #fde8e8;
+}
+
+.status-ring {
+  display: grid;
+  width: 108px;
+  height: 108px;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #fff 58%, transparent 59%),
+    conic-gradient(var(--status-color) calc(var(--value) * 1%), #e7edf5 0);
+}
+
+.status-ring strong,
+.status-ring span {
+  grid-area: 1 / 1;
+}
+
+.status-ring strong {
+  margin-top: -10px;
+  color: var(--status-color);
+  font-size: 24px;
+}
+
+.status-ring span {
+  margin-top: 34px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.strategic-card-body {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+}
+
+.strategic-card-body > strong {
+  line-height: 1.35;
+}
+
+.strategic-card-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status-label {
+  width: fit-content;
+  border-radius: 999px;
+  background: var(--status-soft);
+  color: var(--status-color);
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.target-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.target-strip span {
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 7px 9px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.target-strip strong {
+  color: var(--ink);
+}
+
+.empty-dashboard {
+  display: grid;
+  gap: 6px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+  padding: 20px;
+  color: var(--muted);
+}
+
+.empty-dashboard strong {
+  color: var(--ink);
+}
+
 .performance-tree-panel {
   margin-top: 16px;
 }
@@ -869,5 +994,13 @@ dialog::backdrop {
 
   .org-activity {
     grid-template-columns: 1fr;
+  }
+
+  .strategic-card {
+    grid-template-columns: 1fr;
+  }
+
+  .status-ring {
+    margin: 0 auto;
   }
 }

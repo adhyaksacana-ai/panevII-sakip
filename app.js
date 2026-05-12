@@ -85,10 +85,10 @@ const defaultAgreements = [
     employeeName: "Kepala Seksi Pidana Umum",
     employeePosition: "Bawahan",
     cascadeIndex: 0,
-    indicatorLevel: "activity",
+    indicatorLevel: "strategic",
     indicatorIndex: 0,
-    target: "120 perkara",
-    status: "Menunggu Tanda Tangan",
+    target: "95%",
+    status: "Ditandatangani",
   },
 ];
 
@@ -197,7 +197,7 @@ const defaultRealizations = [
   {
     quarter: "Triwulan I",
     agreementIndex: 0,
-    achievement: "28 perkara",
+    achievement: "86%",
     budget: 125000000,
     note: "Realisasi awal berjalan sesuai target triwulanan.",
   },
@@ -292,6 +292,23 @@ function getAgreementIndicator(agreement) {
   return indicators[agreement?.indicatorIndex] || indicators[0] || { name: "-", target: "-" };
 }
 
+function getSignedAgreementEntries() {
+  return agreements
+    .map((agreement, index) => ({ agreement, index }))
+    .filter(({ agreement }) => agreement.status === "Ditandatangani");
+}
+
+function getSelectedSignedAgreement() {
+  const agreementSelect = document.querySelector("#realizationAgreementSelect");
+  const selectedIndex = Number(agreementSelect?.value);
+  const selectedAgreement = agreements[selectedIndex];
+  if (selectedAgreement?.status === "Ditandatangani") {
+    return { agreement: selectedAgreement, index: selectedIndex };
+  }
+
+  return getSignedAgreementEntries()[0] || { agreement: null, index: -1 };
+}
+
 function renderRenstraIndicatorList(indicators) {
   return indicators
     .map(
@@ -309,18 +326,86 @@ function renderRenstraIndicatorList(indicators) {
     .join("");
 }
 
+function parseTargetNumber(value) {
+  const match = String(value || "").replace(",", ".").match(/-?\d+(\.\d+)?/);
+  return match ? Number(match[0]) : 0;
+}
+
+function calculateAchievementPercent(achievement, target) {
+  const achievementNumber = parseTargetNumber(achievement);
+  const targetNumber = parseTargetNumber(target);
+  if (!achievementNumber || !targetNumber) return 0;
+
+  return Math.min(Math.round((achievementNumber / targetNumber) * 100), 150);
+}
+
+function getStrategicDashboardItems() {
+  const latestByAgreement = new Map();
+  realizations.forEach((item) => {
+    const agreement = agreements[item.agreementIndex];
+    if (!agreement || agreement.status !== "Ditandatangani" || agreement.indicatorLevel !== "strategic") return;
+    if (!latestByAgreement.has(item.agreementIndex)) latestByAgreement.set(item.agreementIndex, item);
+  });
+
+  return [...latestByAgreement.entries()].map(([agreementIndex, realization]) => {
+    const agreement = agreements[agreementIndex];
+    const plan = getAgreementPlan(agreement);
+    const indicator = getAgreementIndicator(agreement);
+    const target = agreement.target || indicator.target;
+    const percent = calculateAchievementPercent(realization.achievement, target);
+    const status = percent < 60 ? "red" : percent < 85 ? "yellow" : "green";
+
+    return {
+      sasaran: getSasaranByLevel(plan, "strategic"),
+      indicator: indicator.name,
+      target,
+      achievement: realization.achievement,
+      quarter: realization.quarter,
+      percent,
+      status,
+    };
+  });
+}
+
 function renderGoals() {
   const goalList = document.querySelector("#goalList");
-  goalList.innerHTML = goals
+  if (!goalList) return;
+
+  const items = getStrategicDashboardItems();
+  const average = items.length ? Math.round(items.reduce((total, item) => total + item.percent, 0) / items.length) : 0;
+  const riskCount = items.filter((item) => item.percent < 85).length;
+
+  document.querySelector("#strategicAverageMetric").textContent = `${average}%`;
+  document.querySelector("#strategicGoalMetric").textContent = new Set(items.map((item) => item.sasaran)).size;
+  document.querySelector("#strategicIndicatorMetric").textContent = items.length;
+  document.querySelector("#strategicRiskMetric").textContent = riskCount;
+
+  if (!items.length) {
+    goalList.innerHTML = `
+      <div class="empty-dashboard">
+        <strong>Belum ada capaian sasaran strategis.</strong>
+        <span>Tandatangani Perjanjian Kinerja level Sasaran Strategis, lalu input realisasi kinerjanya.</span>
+      </div>
+    `;
+    return;
+  }
+
+  goalList.innerHTML = items
     .map(
-      (goal) => `
-        <article class="goal-row">
-          <header>
-            <strong>${goal.title}</strong>
-            <span>${goal.progress}%</span>
-          </header>
-          <div class="progress" aria-label="Progress ${goal.progress}%">
-            <span style="width: ${goal.progress}%"></span>
+      (item) => `
+        <article class="strategic-card ${item.status}">
+          <div class="status-ring" style="--value: ${Math.min(item.percent, 100)}">
+            <strong>${item.percent}%</strong>
+            <span>${escapeHtml(item.quarter)}</span>
+          </div>
+          <div class="strategic-card-body">
+            <span class="status-label">${item.status === "green" ? "Tercapai" : item.status === "yellow" ? "Perlu Akselerasi" : "Kritis"}</span>
+            <strong>${escapeHtml(item.sasaran)}</strong>
+            <p>${escapeHtml(item.indicator)}</p>
+            <div class="target-strip">
+              <span>Target: <strong>${escapeHtml(item.target)}</strong></span>
+              <span>Realisasi: <strong>${escapeHtml(item.achievement)}</strong></span>
+            </div>
           </div>
         </article>
       `
@@ -406,6 +491,7 @@ function populatePerformanceYearSelect() {
 
 function renderPerformanceTree() {
   const performanceTree = document.querySelector("#performanceTree");
+  if (!performanceTree) return;
   const selectedYear = document.querySelector("#performanceYearSelect")?.value || getPerformanceYears()[0] || "Tahun 1";
 
   if (!renstraItems.length) {
@@ -639,6 +725,7 @@ function refreshCascadeViews() {
   populateRealizationCascadeSelect();
   populateRealizationIndicatorSelect();
   renderRealizations();
+  renderGoals();
   renderAgreementPreview();
   renderAgreements();
 }
@@ -756,11 +843,22 @@ function populateRealizationCascadeSelect() {
   const select = document.querySelector("#realizationCascadeSelect");
   if (!agreementSelect || !select) return;
 
-  agreementSelect.innerHTML = agreements
-    .map((agreement, index) => `<option value="${index}">${escapeHtml(agreement.number)} - ${escapeHtml(agreement.employeeName)}</option>`)
-    .join("");
+  const signedAgreements = getSignedAgreementEntries();
+  const currentValue = agreementSelect.value;
+  agreementSelect.innerHTML = signedAgreements.length
+    ? signedAgreements
+        .map(
+          ({ agreement, index }) =>
+            `<option value="${index}">${escapeHtml(agreement.number)} - ${escapeHtml(agreement.employeeName)}</option>`
+        )
+        .join("")
+    : "<option value=\"\">Belum ada PK ditandatangani</option>";
 
-  const agreement = agreements[Number(agreementSelect.value)] || agreements[0];
+  if (signedAgreements.some(({ index }) => String(index) === currentValue)) {
+    agreementSelect.value = currentValue;
+  }
+
+  const { agreement } = getSelectedSignedAgreement();
   const plan = getAgreementPlan(agreement);
   select.innerHTML = agreement && plan
     ? `<option value="${agreement.cascadeIndex}">${escapeHtml(getSasaranByLevel(plan, agreement.indicatorLevel))}</option>`
@@ -774,7 +872,7 @@ function populateRealizationIndicatorSelect() {
   const indicatorSelect = document.querySelector("#realizationIndicatorSelect");
   if (!agreementSelect || !cascadeSelect || !levelSelect || !indicatorSelect) return;
 
-  const agreement = agreements[Number(agreementSelect.value)] || agreements[0];
+  const { agreement } = getSelectedSignedAgreement();
   const plan = getAgreementPlan(agreement);
   const indicator = getAgreementIndicator(agreement);
   levelSelect.innerHTML = agreement
@@ -784,7 +882,7 @@ function populateRealizationIndicatorSelect() {
     ? `<option value="${agreement.cascadeIndex}">${escapeHtml(getSasaranByLevel(plan, agreement.indicatorLevel))}</option>`
     : "";
   indicatorSelect.innerHTML = agreement
-    ? `<option value="${agreement.indicatorIndex}">${escapeHtml(indicator.name)} - Target ${escapeHtml(indicator.target)}</option>`
+    ? `<option value="${agreement.indicatorIndex}">${escapeHtml(indicator.name)} - Target ${escapeHtml(agreement.target || indicator.target)}</option>`
     : "";
 }
 
@@ -792,9 +890,22 @@ function renderRealizations() {
   const rows = document.querySelector("#realizationRows");
   if (!rows) return;
 
-  rows.innerHTML = realizations
-    .map((item, index) => {
-      const agreement = agreements[item.agreementIndex] || agreements[0];
+  const signedRealizations = realizations
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => agreements[item.agreementIndex]?.status === "Ditandatangani");
+
+  if (!signedRealizations.length) {
+    rows.innerHTML = `
+      <tr>
+        <td colspan="9">Belum ada realisasi dari Perjanjian Kinerja yang sudah ditandatangani.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  rows.innerHTML = signedRealizations
+    .map(({ item, index }) => {
+      const agreement = agreements[item.agreementIndex];
       const plan = getAgreementPlan(agreement);
       const indicator = getAgreementIndicator(agreement);
       const sasaran = getSasaranByLevel(plan, agreement?.indicatorLevel || "activity");
@@ -805,7 +916,7 @@ function renderRealizations() {
           <td>${escapeHtml(sasaran || "-")}</td>
           <td>${escapeHtml(getLevelLabel(agreement?.indicatorLevel || "activity"))}</td>
           <td>${escapeHtml(indicator.name)}</td>
-          <td>${escapeHtml(indicator.target)}</td>
+          <td>${escapeHtml(agreement?.target || indicator.target)}</td>
           <td><strong>${escapeHtml(item.achievement)}</strong></td>
           <td>${currency(item.budget)}</td>
           <td>${escapeHtml(item.note || "-")}</td>
@@ -1259,7 +1370,7 @@ document.querySelectorAll(".nav-item").forEach((button) => {
   button.addEventListener("click", () => switchPage(button.dataset.page));
 });
 
-document.querySelector("#performanceYearSelect").addEventListener("change", renderPerformanceTree);
+document.querySelector("#performanceYearSelect")?.addEventListener("change", renderPerformanceTree);
 
 document.querySelector("#openEntry").addEventListener("click", () => {
   document.querySelector("#entryDialog").showModal();
@@ -1268,14 +1379,21 @@ document.querySelector("#openEntry").addEventListener("click", () => {
 document.querySelector("#realizationForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
+  const { agreement, index } = getSelectedSignedAgreement();
+  if (!agreement) {
+    alert("Belum ada Perjanjian Kinerja yang ditandatangani. Tandatangani PK terlebih dahulu sebelum input realisasi.");
+    return;
+  }
+
   realizations.unshift({
     quarter: form.get("quarter"),
-    agreementIndex: Number(form.get("agreementIndex")),
+    agreementIndex: index,
     achievement: form.get("achievement"),
     budget: Number(form.get("budget")),
     note: form.get("note"),
   });
   renderRealizations();
+  renderGoals();
   event.currentTarget.reset();
   populateRealizationIndicatorSelect();
   alert("Realisasi kinerja triwulanan berhasil disimpan.");
@@ -1288,11 +1406,15 @@ document.querySelector("#realizationRows").addEventListener("click", (event) => 
   if (!deleteButton) return;
   realizations.splice(Number(deleteButton.dataset.deleteRealization), 1);
   renderRealizations();
+  renderGoals();
 });
 
 document.querySelector("#resetRealizations").addEventListener("click", () => {
   realizations = structuredClone(defaultRealizations);
+  populateRealizationCascadeSelect();
+  populateRealizationIndicatorSelect();
   renderRealizations();
+  renderGoals();
 });
 
 document.querySelectorAll("[data-add-indicator]").forEach((button) => {
@@ -1527,7 +1649,7 @@ document.querySelector("#agreementForm").addEventListener("submit", (event) => {
   };
 
   if (editingAgreementIndex === null) {
-    agreements.unshift(payload);
+    agreements.push(payload);
   } else {
     agreements[editingAgreementIndex] = payload;
   }
@@ -1536,6 +1658,7 @@ document.querySelector("#agreementForm").addEventListener("submit", (event) => {
   populateRealizationCascadeSelect();
   populateRealizationIndicatorSelect();
   renderRealizations();
+  renderGoals();
   resetAgreementForm();
   alert("Perjanjian kinerja berhasil disimpan.");
 });
@@ -1554,32 +1677,43 @@ document.querySelector("#agreementRows").addEventListener("click", (event) => {
     const index = Number(signButton.dataset.signAgreement);
     agreements[index].status = agreements[index].status === "Ditandatangani" ? "Menunggu Tanda Tangan" : "Ditandatangani";
     renderAgreements();
+    populateRealizationCascadeSelect();
+    populateRealizationIndicatorSelect();
     renderRealizations();
+    renderGoals();
   }
 
   if (deleteButton) {
     const index = Number(deleteButton.dataset.deleteAgreement);
     agreements.splice(index, 1);
+    realizations = realizations
+      .filter((item) => item.agreementIndex !== index)
+      .map((item) => ({
+        ...item,
+        agreementIndex: item.agreementIndex > index ? item.agreementIndex - 1 : item.agreementIndex,
+      }));
     renderAgreements();
     populateRealizationCascadeSelect();
     populateRealizationIndicatorSelect();
     renderRealizations();
+    renderGoals();
     if (editingAgreementIndex === index) resetAgreementForm();
   }
 });
 
 document.querySelector("#resetAgreements").addEventListener("click", () => {
   agreements = structuredClone(defaultAgreements);
+  realizations = structuredClone(defaultRealizations);
   renderAgreements();
   populateRealizationCascadeSelect();
   populateRealizationIndicatorSelect();
   renderRealizations();
+  renderGoals();
   resetAgreementForm();
 });
 
 document.querySelector("#cancelAgreementEdit").addEventListener("click", resetAgreementForm);
 
-renderGoals();
 populateCascadeSelects();
 populateAgreementCascadeSelect();
 populateAgreementIndicatorSelect();
@@ -1592,6 +1726,7 @@ renderPlans();
 renderPerformanceTree();
 renderRenstraRows();
 renderRealizations();
+renderGoals();
 renderAgreementPreview();
 renderAgreements();
 renderDocuments();
