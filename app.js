@@ -1326,6 +1326,343 @@ function fillAgreementForm(agreement, index) {
   form.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+const akipState = {
+  workbook: null,
+  model: null,
+  answers: {},
+  notes: {},
+  guideSelections: {},
+};
+
+function akipCell(sheet, row, column) {
+  return sheet[XLSX.utils.encode_cell({ r: row - 1, c: column - 1 })];
+}
+
+function akipText(sheet, row, column) {
+  const cell = akipCell(sheet, row, column);
+  return cell?.v === undefined || cell?.v === null ? "" : String(cell.v).trim();
+}
+
+function akipNumber(value) {
+  const parsed = Number(String(value ?? "").replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseAkipFormulaNumber(value) {
+  const source = String(value || "").trim();
+  if (source.includes("/")) {
+    const [left, right] = source.split("/").map(Number);
+    return right ? left / right : 0;
+  }
+  return Number(source) || 0;
+}
+
+function parseAkipOptions(formula) {
+  const source = String(formula || "").replace("_xlfn.", "");
+  if (/\/100\b/.test(source)) return { type: "percent", options: [] };
+  const options = [...source.matchAll(/"([^"]+)"\s*,\s*([^,)]+)/g)].map((match) => ({
+    label: match[1],
+    score: parseAkipFormulaNumber(match[2]),
+  }));
+  return { type: "choice", options };
+}
+
+function scoreAkipAnswer(formula, answer) {
+  const rule = parseAkipOptions(formula);
+  if (rule.type === "percent") return Math.max(0, Math.min(1, akipNumber(answer) / 100));
+  const found = rule.options.find((option) => option.label === answer);
+  return found ? found.score : 0;
+}
+
+function parseAkipSheet(sheetName) {
+  const sheet = akipState.workbook.Sheets[sheetName];
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const components = [];
+  let currentComponent = null;
+  let currentSubcomponent = null;
+
+  for (let row = 1; row <= range.e.r + 1; row += 1) {
+    const no = akipText(sheet, row, 1);
+    const title = akipText(sheet, row, 2);
+    const weight = akipNumber(akipText(sheet, row, 3));
+    const formulaPm = akipCell(sheet, row, 7)?.f || "";
+    const formulaEval = akipCell(sheet, row, 8)?.f || "";
+    const subtotalFormula = akipCell(sheet, row, 5)?.f || "";
+
+    if (/^\d+$/.test(no) && title && weight && !formulaPm && title === title.toUpperCase()) {
+      currentComponent = { row, no, title, weight, subcomponents: [], pm: 0, evaluation: 0 };
+      components.push(currentComponent);
+      currentSubcomponent = null;
+      continue;
+    }
+
+    if (/^\d+\.[a-z]/i.test(no) && title && weight) {
+      currentSubcomponent = { row, no, title, weight, criteria: [], formula: "", pm: 0, evaluation: 0 };
+      currentComponent?.subcomponents.push(currentSubcomponent);
+      continue;
+    }
+
+    if (/^NILAI SUB KOMPONEN/i.test(no) && currentSubcomponent) {
+      currentSubcomponent.formula = subtotalFormula;
+      continue;
+    }
+
+    if ((formulaPm || formulaEval) && currentSubcomponent) {
+      const rule = parseAkipOptions(formulaPm || formulaEval);
+      currentSubcomponent.criteria.push({
+        row,
+        no,
+        title,
+        evidence: akipText(sheet, row, 4),
+        guide: akipText(sheet, row, 9),
+        note: akipText(sheet, row, 10),
+        formulaPm,
+        formulaEval,
+        type: rule.type,
+        options: rule.options.map((option) => option.label),
+      });
+    }
+  }
+
+  return { sheetName, components };
+}
+
+function calculateAkipSubcomponent(subcomponent, field) {
+  const column = field === "pm" ? "G" : "H";
+  const scores = subcomponent.criteria.map((criterion) => {
+    const key = `${criterion.row}:${field}`;
+    const formula = field === "pm" ? criterion.formulaPm : criterion.formulaEval;
+    return { row: criterion.row, score: scoreAkipAnswer(formula, akipState.answers[key]) };
+  });
+  const formula = String(subcomponent.formula || "").replaceAll("$", "");
+  const rangeMatch = formula.match(new RegExp(`${column}(\\d+):${column}(\\d+)`));
+  const selectedScores = rangeMatch
+    ? scores.filter((item) => item.row >= Number(rangeMatch[1]) && item.row <= Number(rangeMatch[2]))
+    : scores;
+  const totalScore = selectedScores.reduce((sum, item) => sum + item.score, 0);
+  const weightMatch = formula.match(/\*C(\d+)/);
+  const weight = weightMatch ? subcomponent.weight : subcomponent.weight;
+
+  if (/AVERAGE/i.test(formula)) {
+    return selectedScores.length ? (totalScore / selectedScores.length) * weight : 0;
+  }
+
+  const denominator = selectedScores.length;
+  return denominator ? (totalScore / denominator) * weight : 0;
+}
+
+function akipPredicate(score) {
+  if (score > 90) return "AA";
+  if (score > 80) return "A";
+  if (score > 70) return "BB";
+  if (score > 60) return "B";
+  if (score > 50) return "CC";
+  if (score > 30) return "C";
+  return "D";
+}
+
+function calculateAkipModel() {
+  const model = akipState.model;
+  if (!model) return { pm: 0, evaluation: 0 };
+
+  model.components.forEach((component) => {
+    component.subcomponents.forEach((subcomponent) => {
+      subcomponent.pm = calculateAkipSubcomponent(subcomponent, "pm");
+      subcomponent.evaluation = calculateAkipSubcomponent(subcomponent, "evaluation");
+    });
+    component.pm = subcomponentTotal(component.subcomponents, "pm");
+    component.evaluation = subcomponentTotal(component.subcomponents, "evaluation");
+  });
+
+  return {
+    pm: subcomponentTotal(model.components, "pm"),
+    evaluation: subcomponentTotal(model.components, "evaluation"),
+  };
+}
+
+function subcomponentTotal(items, field) {
+  return items.reduce((sum, item) => sum + (Number(item[field]) || 0), 0);
+}
+
+function formatAkipScore(value) {
+  return Number(value || 0).toFixed(2).replace(/\.00$/, "");
+}
+
+function renderAkipInput(criterion, field) {
+  const key = `${criterion.row}:${field}`;
+  const value = akipState.answers[key] || "";
+  if (criterion.type === "percent") {
+    return `<input class="akip-score-input" data-akip-answer="${key}" type="number" min="0" max="100" step="0.01" value="${escapeHtml(value)}" placeholder="0-100" />`;
+  }
+  return `
+    <select class="akip-score-input" data-akip-answer="${key}">
+      <option value="">-</option>
+      ${criterion.options.map((option) => `<option value="${escapeHtml(option)}" ${value === option ? "selected" : ""}>${escapeHtml(option)}</option>`).join("")}
+    </select>
+  `;
+}
+
+function renderAkipNote(criterion) {
+  const value = akipState.notes[criterion.row] ?? criterion.note ?? "";
+  return `<input class="akip-note-input" data-akip-note="${criterion.row}" type="url" value="${escapeHtml(value)}" placeholder="https://link-eviden-atau-catatan" />`;
+}
+
+function parseAkipGuideOptions(criterion) {
+  const guide = String(criterion.guide || "").replace(/\s+/g, " ").trim();
+  if (!guide) return [];
+
+  const labels = criterion.options.length ? criterion.options : ["YA", "TIDAK", "A", "B", "C", "D", "E"];
+  const matches = labels
+    .map((label) => {
+      const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const match = guide.match(new RegExp(`(?:^|\\s)${escaped}\\s*[:：]\\s*`, "i"));
+      return match ? { label, index: match.index || 0, end: (match.index || 0) + match[0].length } : null;
+    })
+    .filter(Boolean)
+    .sort((left, right) => left.index - right.index);
+
+  if (!matches.length) return [{ label: "Keterangan", description: guide }];
+
+  return matches.map((match, index) => {
+    const next = matches[index + 1];
+    return {
+      label: match.label,
+      description: guide.slice(match.end, next ? next.index : guide.length).trim(),
+    };
+  });
+}
+
+function renderAkipGuideDropdown(criterion) {
+  const options = parseAkipGuideOptions(criterion);
+  const selected = akipState.guideSelections[criterion.row] || options[0]?.label || "";
+  const selectedOption = options.find((option) => option.label === selected) || options[0];
+
+  if (!options.length) return "";
+
+  return `
+    <div class="akip-guide-cell">
+      <select class="akip-guide-select" data-akip-guide="${criterion.row}">
+        ${options
+          .map(
+            (option) =>
+              `<option value="${escapeHtml(option.label)}" ${selected === option.label ? "selected" : ""}>${escapeHtml(option.label)}</option>`
+          )
+          .join("")}
+      </select>
+      <p>${escapeHtml(selectedOption?.description || "")}</p>
+    </div>
+  `;
+}
+
+function renderAkipEvaluation() {
+  const rows = document.querySelector("#akipRows");
+  const summary = document.querySelector("#akipSummary");
+  if (!akipState.model) return;
+
+  const totals = calculateAkipModel();
+  summary.innerHTML = `
+    <article class="metric">
+      <span>Total PM</span>
+      <strong>${formatAkipScore(totals.pm)}</strong>
+      <small>Predikat ${akipPredicate(totals.pm)}</small>
+    </article>
+    <article class="metric">
+      <span>Total Evaluasi</span>
+      <strong>${formatAkipScore(totals.evaluation)}</strong>
+      <small>Predikat ${akipPredicate(totals.evaluation)}</small>
+    </article>
+  `;
+
+  rows.innerHTML = akipState.model.components
+    .map(
+      (component) => `
+        <tr class="akip-component-row">
+          <td>${escapeHtml(component.no)}</td>
+          <td><strong>${escapeHtml(component.title)}</strong></td>
+          <td>${formatAkipScore(component.weight)}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td>${formatAkipScore(component.pm)}</td>
+          <td>${formatAkipScore(component.evaluation)}</td>
+          <td></td>
+          <td></td>
+        </tr>
+        ${component.subcomponents
+          .map(
+            (subcomponent) => `
+              <tr class="akip-subcomponent-row">
+                <td>${escapeHtml(subcomponent.no)}</td>
+                <td><strong>${escapeHtml(subcomponent.title)}</strong></td>
+                <td>${formatAkipScore(subcomponent.weight)}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>${formatAkipScore(subcomponent.pm)}</td>
+                <td>${formatAkipScore(subcomponent.evaluation)}</td>
+                <td></td>
+                <td></td>
+              </tr>
+              ${subcomponent.criteria
+                .map(
+                  (criterion) => `
+                    <tr>
+                      <td>${escapeHtml(criterion.no)}</td>
+                      <td>${escapeHtml(criterion.title)}</td>
+                      <td></td>
+                      <td>${escapeHtml(criterion.evidence)}</td>
+                      <td>${renderAkipInput(criterion, "pm")}</td>
+                      <td>${renderAkipInput(criterion, "evaluation")}</td>
+                      <td>${formatAkipScore(scoreAkipAnswer(criterion.formulaPm, akipState.answers[`${criterion.row}:pm`]))}</td>
+                      <td>${formatAkipScore(scoreAkipAnswer(criterion.formulaEval, akipState.answers[`${criterion.row}:evaluation`]))}</td>
+                      <td>${renderAkipGuideDropdown(criterion)}</td>
+                      <td>${renderAkipNote(criterion)}</td>
+                    </tr>
+                  `
+                )
+                .join("")}
+            `
+          )
+          .join("")}
+      `
+    )
+    .join("");
+}
+
+function loadAkipSheet(sheetName) {
+  akipState.answers = {};
+  akipState.notes = {};
+  akipState.guideSelections = {};
+  akipState.model = parseAkipSheet(sheetName);
+  renderAkipEvaluation();
+}
+
+function deleteAkipWorksheet() {
+  akipState.workbook = null;
+  akipState.model = null;
+  akipState.answers = {};
+  akipState.notes = {};
+  akipState.guideSelections = {};
+
+  document.querySelector("#akipFile").value = "";
+  document.querySelector("#akipSheetSelect").innerHTML = "<option>Unggah workbook terlebih dahulu</option>";
+  document.querySelector("#akipSheetSelect").disabled = true;
+  document.querySelector("#akipSummary").innerHTML = `
+    <article class="metric">
+      <span>Total PM</span>
+      <strong>0</strong>
+      <small>Predikat D</small>
+    </article>
+    <article class="metric">
+      <span>Total Evaluasi</span>
+      <strong>0</strong>
+      <small>Predikat D</small>
+    </article>
+  `;
+  document.querySelector("#akipRows").innerHTML =
+    '<tr><td colspan="10">Unggah workbook Lembar Kerja Evaluasi (LKE) AKIP untuk mulai menilai.</td></tr>';
+}
+
 function renderDocuments() {
   const documentGrid = document.querySelector("#documentGrid");
   documentGrid.innerHTML = documents
@@ -1375,6 +1712,70 @@ document.querySelector("#performanceYearSelect")?.addEventListener("change", ren
 document.querySelector("#openEntry").addEventListener("click", () => {
   document.querySelector("#entryDialog").showModal();
 });
+
+document.querySelector("#akipFile").addEventListener("change", async (event) => {
+  const [file] = event.target.files;
+  if (!file) return;
+
+  try {
+    const data = await file.arrayBuffer();
+    akipState.workbook = XLSX.read(data, { type: "array", cellFormula: true });
+    const sheetSelect = document.querySelector("#akipSheetSelect");
+    const lkeSheets = akipState.workbook.SheetNames.filter((name) => /^LKE/i.test(name));
+    if (!lkeSheets.length) {
+      akipState.workbook = null;
+      akipState.model = null;
+      akipState.answers = {};
+      akipState.notes = {};
+      akipState.guideSelections = {};
+      document.querySelector("#akipRows").innerHTML =
+        '<tr><td colspan="10">File belum memuat sheet Lembar Kerja Evaluasi (LKE) AKIP.</td></tr>';
+      throw new Error('Workbook harus memiliki sheet LKE, misalnya "LKE Eselon I", "LKE KEJATI", atau "LKE KEJARI+CABJARI".');
+    }
+    const sheetNames = lkeSheets;
+
+    sheetSelect.innerHTML = sheetNames.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+    sheetSelect.disabled = false;
+    loadAkipSheet(sheetNames[0]);
+  } catch (error) {
+    alert(`Gagal membaca workbook LKE: ${error.message}`);
+    event.target.value = "";
+  }
+});
+
+document.querySelector("#akipSheetSelect").addEventListener("change", (event) => {
+  loadAkipSheet(event.target.value);
+});
+
+document.querySelector("#akipRows").addEventListener("input", (event) => {
+  const scoreInput = event.target.closest("[data-akip-answer]");
+  if (scoreInput) {
+    akipState.answers[scoreInput.dataset.akipAnswer] = scoreInput.value;
+    renderAkipEvaluation();
+    return;
+  }
+
+  const noteInput = event.target.closest("[data-akip-note]");
+  if (noteInput) {
+    akipState.notes[noteInput.dataset.akipNote] = noteInput.value;
+  }
+});
+
+document.querySelector("#akipRows").addEventListener("change", (event) => {
+  const guideSelect = event.target.closest("[data-akip-guide]");
+  if (!guideSelect) return;
+  akipState.guideSelections[guideSelect.dataset.akipGuide] = guideSelect.value;
+  renderAkipEvaluation();
+});
+
+document.querySelector("#resetAkipScores").addEventListener("click", () => {
+  akipState.answers = {};
+  akipState.notes = {};
+  akipState.guideSelections = {};
+  if (akipState.model) renderAkipEvaluation();
+});
+
+document.querySelector("#deleteAkipWorksheet").addEventListener("click", deleteAkipWorksheet);
 
 document.querySelector("#realizationForm").addEventListener("submit", (event) => {
   event.preventDefault();

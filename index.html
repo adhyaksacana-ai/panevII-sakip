@@ -503,23 +503,60 @@
             <div class="panel-header">
               <div>
                 <h2>Evaluasi AKIP</h2>
-                <p class="panel-copy">Penilaian akuntabilitas kinerja satker berdasarkan komponen perencanaan, pengukuran, pelaporan, dan evaluasi internal.</p>
+                <p class="panel-copy">Impor LKE AKIP internal, isi nilai PM dan evaluasi, lalu hitung rekap sesuai pola workbook.</p>
               </div>
-              <button class="primary-button small" type="button">Input Nilai</button>
+              <span class="badge">Wajib Lembar Kerja Evaluasi</span>
             </div>
-            <div class="review-list" id="akipReviewList">
-              <article class="review-item">
-                <strong>Perencanaan Kinerja</strong>
-                <p>Nilai sementara 27.5 dari 30. Perlu penyelarasan target tahunan dengan Renstra.</p>
+            <div class="akip-toolbar">
+              <label>
+                File LKE AKIP
+                <input id="akipFile" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+              </label>
+              <label>
+                Sheet LKE
+                <select id="akipSheetSelect" disabled>
+                  <option>Unggah workbook terlebih dahulu</option>
+                </select>
+              </label>
+              <div class="akip-actions full-span">
+                <button class="ghost-button" id="resetAkipScores" type="button">Reset Nilai</button>
+                <button class="ghost-button" id="deleteAkipWorksheet" type="button">Hapus LKE</button>
+              </div>
+            </div>
+            <div class="akip-summary" id="akipSummary">
+              <article class="metric">
+                <span>Total PM</span>
+                <strong>0</strong>
+                <small>Predikat D</small>
               </article>
-              <article class="review-item">
-                <strong>Pengukuran Kinerja</strong>
-                <p>Nilai sementara 24 dari 30. Indikator kegiatan sudah tersedia, realisasi triwulan perlu dilengkapi.</p>
+              <article class="metric">
+                <span>Total Evaluasi</span>
+                <strong>0</strong>
+                <small>Predikat D</small>
               </article>
-              <article class="review-item">
-                <strong>Pelaporan dan Evaluasi Internal</strong>
-                <p>Nilai sementara 31 dari 40. Eviden tindak lanjut evaluasi perlu diperkuat.</p>
-              </article>
+            </div>
+            <div class="table-wrap">
+              <table class="akip-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Komponen/Sub Komponen/Kriteria</th>
+                    <th>Bobot</th>
+                    <th>Bukti Dukung / Standar Evidence</th>
+                    <th>Nilai PM</th>
+                    <th>Nilai Evaluasi</th>
+                    <th>Skor PM</th>
+                    <th>Skor Evaluasi</th>
+                    <th>Keterangan Range Nilai</th>
+                    <th>Catatan / Link</th>
+                  </tr>
+                </thead>
+                <tbody id="akipRows">
+                  <tr>
+                    <td colspan="10">Unggah workbook Lembar Kerja Evaluasi (LKE) AKIP untuk mulai menilai.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </section>
         </section>

@@ -697,7 +697,8 @@ th {
 .cascade-form,
 .agreement-form,
 .renstra-form,
-.realization-form {
+.realization-form,
+.akip-toolbar {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
@@ -709,7 +710,8 @@ th {
 .renstra-form .primary-button,
 .realization-form .primary-button,
 .form-actions,
-.import-actions {
+.import-actions,
+.akip-toolbar .ghost-button {
   align-self: end;
 }
 
@@ -719,7 +721,8 @@ th {
 .renstra-form .primary-button,
 .realization-form .primary-button,
 .form-actions,
-.import-actions {
+.import-actions,
+.akip-toolbar .ghost-button {
   grid-column: 1 / -1;
 }
 
@@ -760,6 +763,66 @@ th {
   min-width: 1200px;
 }
 
+.akip-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.akip-table {
+  min-width: 1700px;
+}
+
+.akip-table th:nth-child(2),
+.akip-table td:nth-child(2) {
+  min-width: 320px;
+}
+
+.akip-table th:nth-child(4),
+.akip-table td:nth-child(4),
+.akip-table th:nth-child(9),
+.akip-table td:nth-child(9) {
+  min-width: 280px;
+}
+
+.akip-table th:nth-child(10),
+.akip-table td:nth-child(10) {
+  min-width: 240px;
+}
+
+.akip-component-row {
+  background: #eef6f2;
+}
+
+.akip-subcomponent-row {
+  background: #f6f8fb;
+}
+
+.akip-score-input {
+  min-width: 96px;
+}
+
+.akip-guide-cell {
+  display: grid;
+  gap: 8px;
+}
+
+.akip-guide-select {
+  min-width: 120px;
+}
+
+.akip-guide-cell p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.akip-note-input {
+  min-width: 220px;
+}
+
 .import-grid {
   display: grid;
   grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
@@ -768,6 +831,7 @@ th {
 
 .form-actions,
 .import-actions,
+.akip-actions,
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -942,6 +1006,8 @@ dialog::backdrop {
   .agreement-form,
   .renstra-form,
   .realization-form,
+  .akip-toolbar,
+  .akip-summary,
   .import-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -978,6 +1044,8 @@ dialog::backdrop {
   .agreement-form,
   .renstra-form,
   .realization-form,
+  .akip-toolbar,
+  .akip-summary,
   .import-grid {
     grid-template-columns: 1fr;
   }
