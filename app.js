@@ -1340,11 +1340,45 @@ function akipCell(sheet, row, column) {
 
 function akipText(sheet, row, column) {
   const cell = akipCell(sheet, row, column);
-  return cell?.v === undefined || cell?.v === null ? "" : String(cell.v).trim();
+  if (cell?.w !== undefined && cell?.w !== null) return String(cell.w).trim();
+  if (cell?.v !== undefined && cell?.v !== null) return String(cell.v).trim();
+  return "";
+}
+
+function akipDirectText(sheet, row, column) {
+  const cell = akipCell(sheet, row, column);
+  if (cell?.w !== undefined && cell?.w !== null) return String(cell.w).trim();
+  if (cell?.v !== undefined && cell?.v !== null) return String(cell.v).trim();
+  return "";
+}
+
+function akipMergedText(sheet, row, column) {
+  const ownText = akipDirectText(sheet, row, column);
+  if (ownText) return ownText;
+
+  const merges = sheet["!merges"] || [];
+  const merge = merges.find(
+    (item) => row - 1 >= item.s.r && row - 1 <= item.e.r && column - 1 >= item.s.c && column - 1 <= item.e.c
+  );
+  if (!merge) return "";
+
+  return akipDirectText(sheet, merge.s.r + 1, merge.s.c + 1);
+}
+
+function normalizeAkipText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/[._-]+/g, " ")
+    .trim();
 }
 
 function akipNumber(value) {
-  const parsed = Number(String(value ?? "").replace(",", "."));
+  const cleaned = String(value ?? "")
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\.(?=\d{3}(\D|$))/g, "")
+    .replace(",", ".");
+  const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
@@ -1367,6 +1401,146 @@ function parseAkipOptions(formula) {
   return { type: "choice", options };
 }
 
+function parseAkipOptionsFromGuide(guide) {
+  const text = String(guide || "").replace(/\s+/g, " ").trim();
+  const labels = ["AA", "A", "BB", "B", "CC", "C", "D", "E", "YA", "TIDAK", "MEMADAI", "BELUM MEMADAI"];
+  const found = labels.filter((label) => new RegExp(`(?:^|\\b)${label}(?:\\b|\\s*[:：])`, "i").test(text));
+  const unique = [...new Set(found)];
+  const scoreMap = {
+    AA: 1,
+    A: 1,
+    BB: 0.9,
+    B: 0.8,
+    CC: 0.6,
+    C: 0.4,
+    D: 0.2,
+    E: 0,
+    YA: 1,
+    TIDAK: 0,
+    MEMADAI: 1,
+    "BELUM MEMADAI": 0,
+  };
+  if (unique.length >= 2) return { type: "choice", options: unique.map((label) => ({ label, score: scoreMap[label] ?? 0 })) };
+  return { type: "percent", options: [] };
+}
+
+function getAkipFormulaOrValue(sheet, row, column) {
+  const cell = akipCell(sheet, row, column);
+  if (!cell) return "";
+  return cell.f || cell.v || cell.w || "";
+}
+
+function akipColumnHasFormula(sheet, range, column) {
+  for (let row = 1; row <= range.e.r + 1; row += 1) {
+    if (akipCell(sheet, row, column)?.f) return true;
+  }
+  return false;
+}
+
+function findAkipLayout(sheet) {
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const fallback = {
+    no: 1,
+    title: 2,
+    weight: 3,
+    evidence: 4,
+    subtotal: 5,
+    pm: 7,
+    evaluation: 8,
+    guide: 9,
+    note: 10,
+  };
+
+  let best = { score: 0, row: 1, columns: { ...fallback } };
+  const maxHeaderRow = Math.min(range.e.r + 1, 40);
+  const maxColumn = range.e.c + 1;
+
+  for (let row = 1; row <= maxHeaderRow; row += 1) {
+    const columns = {};
+    let score = 0;
+
+    for (let column = 1; column <= maxColumn; column += 1) {
+      const header = normalizeAkipText(
+        [akipMergedText(sheet, row - 1, column), akipMergedText(sheet, row, column), akipMergedText(sheet, row + 1, column)]
+          .filter(Boolean)
+          .join(" ")
+      );
+
+      if (!header) continue;
+      if (!columns.no && /(^|\s)(no|nomor)(\s|$)/.test(header)) {
+        columns.no = column;
+        score += 1;
+      }
+      if (!columns.title && /(komponen|sub komponen|kriteria|uraian|pertanyaan)/.test(header)) {
+        columns.title = column;
+        score += 2;
+      }
+      if (!columns.weight && /(bobot|nilai maksimal|maksimal)/.test(header)) {
+        columns.weight = column;
+        score += 1;
+      }
+      if (!columns.evidence && /(bukti|evidence|data dukung|dokumen)/.test(header)) {
+        columns.evidence = column;
+        score += 1;
+      }
+      if (!columns.pm && /(nilai pm|penilaian mandiri|pm)/.test(header)) {
+        columns.pm = column;
+        score += 1;
+      }
+      if (!columns.evaluation && /(nilai evaluasi|evaluasi|evaluator)/.test(header) && !/(range|keterangan)/.test(header)) {
+        columns.evaluation = column;
+        score += 1;
+      }
+      if (!columns.guide && /(range|keterangan nilai|pedoman|kriteria penilaian)/.test(header)) {
+        columns.guide = column;
+        score += 1;
+      }
+      if (!columns.note && /(catatan|link|rekomendasi|tindak lanjut)/.test(header)) {
+        columns.note = column;
+        score += 1;
+      }
+    }
+
+    if (score > best.score) best = { score, row, columns: { ...fallback, ...columns } };
+  }
+
+  const formulaColumns = [];
+  for (let column = 1; column <= maxColumn; column += 1) {
+    if (akipColumnHasFormula(sheet, range, column)) formulaColumns.push(column);
+  }
+
+  if (!formulaColumns.includes(best.columns.pm) && formulaColumns[0]) best.columns.pm = formulaColumns[0];
+  if (!formulaColumns.includes(best.columns.evaluation) && formulaColumns[1]) best.columns.evaluation = formulaColumns[1];
+
+  return { headerRow: best.row, columns: best.columns };
+}
+
+function sheetLooksLikeAkip(sheet) {
+  if (!sheet?.["!ref"]) return false;
+  const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const maxRow = Math.min(range.e.r + 1, 60);
+  const maxColumn = range.e.c + 1;
+  let hits = 0;
+
+  for (let row = 1; row <= maxRow; row += 1) {
+    for (let column = 1; column <= maxColumn; column += 1) {
+      const text = normalizeAkipText(akipMergedText(sheet, row, column));
+      if (!text) continue;
+      if (/(lembar kerja evaluasi|lke|akip|akuntabilitas kinerja|komponen|sub komponen|bobot|nilai pm|evaluasi)/.test(text)) {
+        hits += 1;
+      }
+    }
+  }
+
+  return hits >= 4;
+}
+
+function getAkipSheetNames(workbook) {
+  const contentMatches = workbook.SheetNames.filter((name) => sheetLooksLikeAkip(workbook.Sheets[name]));
+  const nameMatches = workbook.SheetNames.filter((name) => /lke|akip|evaluasi/i.test(name));
+  return [...new Set([...contentMatches, ...nameMatches])];
+}
+
 function scoreAkipAnswer(formula, answer) {
   const rule = parseAkipOptions(formula);
   if (rule.type === "percent") return Math.max(0, Math.min(1, akipNumber(answer) / 100));
@@ -1374,65 +1548,98 @@ function scoreAkipAnswer(formula, answer) {
   return found ? found.score : 0;
 }
 
+function scoreAkipCriterionAnswer(criterion, field) {
+  const key = `${criterion.row}:${field}`;
+  const answer = akipState.answers[key];
+  const formula = field === "pm" ? criterion.formulaPm : criterion.formulaEval;
+  const formulaScore = scoreAkipAnswer(formula, answer);
+  if (formula || criterion.type === "percent" || !answer) return formulaScore;
+  return criterion.optionScores?.[answer] ?? 0;
+}
+
 function parseAkipSheet(sheetName) {
   const sheet = akipState.workbook.Sheets[sheetName];
   const range = XLSX.utils.decode_range(sheet["!ref"]);
+  const layout = findAkipLayout(sheet);
+  const columns = layout.columns;
   const components = [];
   let currentComponent = null;
   let currentSubcomponent = null;
 
-  for (let row = 1; row <= range.e.r + 1; row += 1) {
-    const no = akipText(sheet, row, 1);
-    const title = akipText(sheet, row, 2);
-    const weight = akipNumber(akipText(sheet, row, 3));
-    const formulaPm = akipCell(sheet, row, 7)?.f || "";
-    const formulaEval = akipCell(sheet, row, 8)?.f || "";
-    const subtotalFormula = akipCell(sheet, row, 5)?.f || "";
+  for (let row = Math.max(1, layout.headerRow); row <= range.e.r + 1; row += 1) {
+    const no = akipMergedText(sheet, row, columns.no);
+    const title = akipMergedText(sheet, row, columns.title);
+    const weight = akipNumber(akipMergedText(sheet, row, columns.weight));
+    const formulaPm = akipCell(sheet, row, columns.pm)?.f || "";
+    const formulaEval = akipCell(sheet, row, columns.evaluation)?.f || "";
+    const subtotalFormula =
+      akipCell(sheet, row, columns.subtotal)?.f ||
+      akipCell(sheet, row, columns.pm)?.f ||
+      akipCell(sheet, row, columns.evaluation)?.f ||
+      "";
+    const compactNo = String(no).replace(/\s+/g, "");
+    const hasFormula = Boolean(formulaPm || formulaEval);
+    const normalizedTitle = normalizeAkipText(title);
 
-    if (/^\d+$/.test(no) && title && weight && !formulaPm && title === title.toUpperCase()) {
+    if (!no && !title && !weight && !hasFormula) continue;
+    if (/^(no|nomor)$/i.test(String(no).trim()) || /komponen|kriteria|uraian/i.test(title)) continue;
+
+    if (/^\d+$/.test(compactNo) && title && weight && !hasFormula) {
       currentComponent = { row, no, title, weight, subcomponents: [], pm: 0, evaluation: 0 };
       components.push(currentComponent);
       currentSubcomponent = null;
       continue;
     }
 
-    if (/^\d+\.[a-z]/i.test(no) && title && weight) {
+    if (/^\d+\.[a-z0-9]+\.?$/i.test(compactNo) && title && weight && !hasFormula) {
+      if (!currentComponent) {
+        currentComponent = { row, no: String(compactNo).split(".")[0] || "1", title: "Komponen AKIP", weight: 0, subcomponents: [], pm: 0, evaluation: 0 };
+        components.push(currentComponent);
+      }
       currentSubcomponent = { row, no, title, weight, criteria: [], formula: "", pm: 0, evaluation: 0 };
       currentComponent?.subcomponents.push(currentSubcomponent);
       continue;
     }
 
-    if (/^NILAI SUB KOMPONEN/i.test(no) && currentSubcomponent) {
+    if (/nilai sub komponen|subtotal|jumlah/i.test(`${no} ${title}`) && currentSubcomponent) {
       currentSubcomponent.formula = subtotalFormula;
       continue;
     }
 
-    if ((formulaPm || formulaEval) && currentSubcomponent) {
-      const rule = parseAkipOptions(formulaPm || formulaEval);
+    const looksLikeCriterion =
+      hasFormula ||
+      (/^\d+\.[a-z0-9]+\.\d+/i.test(compactNo) && title) ||
+      (currentSubcomponent && title && !weight && !/nilai sub komponen|subtotal|jumlah/i.test(normalizedTitle));
+
+    if (looksLikeCriterion && currentSubcomponent) {
+      const guide = akipMergedText(sheet, row, columns.guide);
+      const formulaRule = parseAkipOptions(formulaPm || formulaEval);
+      const fallbackRule = parseAkipOptionsFromGuide(guide);
+      const rule = formulaRule.options.length || formulaRule.type === "percent" ? formulaRule : fallbackRule;
       currentSubcomponent.criteria.push({
         row,
         no,
         title,
-        evidence: akipText(sheet, row, 4),
-        guide: akipText(sheet, row, 9),
-        note: akipText(sheet, row, 10),
-        formulaPm,
-        formulaEval,
+        evidence: akipMergedText(sheet, row, columns.evidence),
+        guide,
+        note: akipMergedText(sheet, row, columns.note),
+        formulaPm: formulaPm || getAkipFormulaOrValue(sheet, row, columns.pm),
+        formulaEval: formulaEval || getAkipFormulaOrValue(sheet, row, columns.evaluation),
         type: rule.type,
         options: rule.options.map((option) => option.label),
+        optionScores: Object.fromEntries(rule.options.map((option) => [option.label, option.score])),
       });
     }
   }
 
-  return { sheetName, components };
+  return { sheetName, layout, components };
 }
 
 function calculateAkipSubcomponent(subcomponent, field) {
-  const column = field === "pm" ? "G" : "H";
+  const columnIndex = field === "pm" ? akipState.model?.layout?.columns?.pm : akipState.model?.layout?.columns?.evaluation;
+  const column = XLSX.utils.encode_col((columnIndex || (field === "pm" ? 7 : 8)) - 1);
   const scores = subcomponent.criteria.map((criterion) => {
-    const key = `${criterion.row}:${field}`;
-    const formula = field === "pm" ? criterion.formulaPm : criterion.formulaEval;
-    return { row: criterion.row, score: scoreAkipAnswer(formula, akipState.answers[key]) };
+    return { row: criterion.row, score: scoreAkipCriterionAnswer(criterion, field) };
   });
   const formula = String(subcomponent.formula || "").replaceAll("$", "");
   const rangeMatch = formula.match(new RegExp(`${column}(\\d+):${column}(\\d+)`));
@@ -1613,8 +1820,8 @@ function renderAkipEvaluation() {
                       <td>${escapeHtml(criterion.evidence)}</td>
                       <td>${renderAkipInput(criterion, "pm")}</td>
                       <td>${renderAkipInput(criterion, "evaluation")}</td>
-                      <td>${formatAkipScore(scoreAkipAnswer(criterion.formulaPm, akipState.answers[`${criterion.row}:pm`]))}</td>
-                      <td>${formatAkipScore(scoreAkipAnswer(criterion.formulaEval, akipState.answers[`${criterion.row}:evaluation`]))}</td>
+                      <td>${formatAkipScore(scoreAkipCriterionAnswer(criterion, "pm"))}</td>
+                      <td>${formatAkipScore(scoreAkipCriterionAnswer(criterion, "evaluation"))}</td>
                       <td>${renderAkipGuideDropdown(criterion)}</td>
                       <td>${renderAkipNote(criterion)}</td>
                     </tr>
@@ -1634,6 +1841,12 @@ function loadAkipSheet(sheetName) {
   akipState.notes = {};
   akipState.guideSelections = {};
   akipState.model = parseAkipSheet(sheetName);
+  if (!akipState.model.components.length) {
+    akipState.model = null;
+    document.querySelector("#akipRows").innerHTML =
+      '<tr><td colspan="10">Sheet terpilih belum dapat dibaca sebagai LKE AKIP. Pastikan tabel memuat kolom No, Komponen/Kriteria, Bobot, Nilai PM, Nilai Evaluasi, dan Keterangan Range Nilai.</td></tr>';
+    throw new Error("Struktur LKE tidak dikenali pada sheet yang dipilih.");
+  }
   renderAkipEvaluation();
 }
 
@@ -1721,7 +1934,7 @@ document.querySelector("#akipFile").addEventListener("change", async (event) => 
     const data = await file.arrayBuffer();
     akipState.workbook = XLSX.read(data, { type: "array", cellFormula: true });
     const sheetSelect = document.querySelector("#akipSheetSelect");
-    const lkeSheets = akipState.workbook.SheetNames.filter((name) => /^LKE/i.test(name));
+    const lkeSheets = getAkipSheetNames(akipState.workbook);
     if (!lkeSheets.length) {
       akipState.workbook = null;
       akipState.model = null;
@@ -1730,7 +1943,7 @@ document.querySelector("#akipFile").addEventListener("change", async (event) => 
       akipState.guideSelections = {};
       document.querySelector("#akipRows").innerHTML =
         '<tr><td colspan="10">File belum memuat sheet Lembar Kerja Evaluasi (LKE) AKIP.</td></tr>';
-      throw new Error('Workbook harus memiliki sheet LKE, misalnya "LKE Eselon I", "LKE KEJATI", atau "LKE KEJARI+CABJARI".');
+      throw new Error('Workbook harus memiliki sheet atau isi tabel LKE/AKIP, misalnya "LKE Eselon I", "LKE KEJATI", atau "LKE KEJARI+CABJARI".');
     }
     const sheetNames = lkeSheets;
 
@@ -1744,7 +1957,11 @@ document.querySelector("#akipFile").addEventListener("change", async (event) => 
 });
 
 document.querySelector("#akipSheetSelect").addEventListener("change", (event) => {
-  loadAkipSheet(event.target.value);
+  try {
+    loadAkipSheet(event.target.value);
+  } catch (error) {
+    alert(`Gagal membaca sheet LKE: ${error.message}`);
+  }
 });
 
 document.querySelector("#akipRows").addEventListener("input", (event) => {
