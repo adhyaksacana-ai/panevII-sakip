@@ -224,6 +224,21 @@
                 <button class="primary-button" id="importMatrix" type="button">Ekstrak dan Input Renstra</button>
                 <button class="ghost-button" id="clearMatrix" type="button">Bersihkan</button>
               </div>
+              <div class="template-download full-span">
+                <label>
+                  Download Format
+                  <select id="renstraTemplateFormat">
+                    <option value="xlsx">Excel .xlsx</option>
+                    <option value="xls">Excel .xls</option>
+                    <option value="csv">CSV .csv</option>
+                    <option value="tsv">TSV .tsv</option>
+                    <option value="txt">TXT .txt</option>
+                    <option value="json">JSON .json</option>
+                    <option value="pdf">PDF .pdf</option>
+                  </select>
+                </label>
+                <button class="ghost-button" id="downloadRenstraTemplate" type="button">Download Template</button>
+              </div>
               <p class="helper-text full-span">
                 Kolom: periode, unit, sasaran_strategis, indikator_strategis, target_strategis_t1 sampai target_strategis_t5, sasaran_program, indikator_program, target_program_t1 sampai target_program_t5, sasaran_kegiatan, indikator_kegiatan, target_kegiatan_t1 sampai target_kegiatan_t5, penanggung_jawab.
               </p>

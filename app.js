@@ -970,6 +970,62 @@ function splitDelimitedLine(line, delimiter) {
   return cells;
 }
 
+const renstraTemplateHeaders = [
+  "periode",
+  "unit",
+  "sasaran_strategis",
+  "indikator_strategis",
+  "target_strategis_t1",
+  "target_strategis_t2",
+  "target_strategis_t3",
+  "target_strategis_t4",
+  "target_strategis_t5",
+  "sasaran_program",
+  "indikator_program",
+  "target_program_t1",
+  "target_program_t2",
+  "target_program_t3",
+  "target_program_t4",
+  "target_program_t5",
+  "sasaran_kegiatan",
+  "indikator_kegiatan",
+  "target_kegiatan_t1",
+  "target_kegiatan_t2",
+  "target_kegiatan_t3",
+  "target_kegiatan_t4",
+  "target_kegiatan_t5",
+  "penanggung_jawab",
+];
+
+const renstraTemplateRows = [
+  {
+    periode: "2026-2030",
+    unit: "Kejaksaan Negeri Contoh",
+    sasaran_strategis: "Meningkatnya akuntabilitas kinerja satuan kerja",
+    indikator_strategis: "Nilai SAKIP satuan kerja|Persentase rekomendasi evaluasi ditindaklanjuti",
+    target_strategis_t1: "82|80%",
+    target_strategis_t2: "84|85%",
+    target_strategis_t3: "86|90%",
+    target_strategis_t4: "88|95%",
+    target_strategis_t5: "90|100%",
+    sasaran_program: "Meningkatnya kualitas perencanaan dan pelaporan kinerja",
+    indikator_program: "Persentase dokumen kinerja tepat waktu",
+    target_program_t1: "90%",
+    target_program_t2: "92%",
+    target_program_t3: "94%",
+    target_program_t4: "96%",
+    target_program_t5: "100%",
+    sasaran_kegiatan: "Penyusunan laporan kinerja triwulanan",
+    indikator_kegiatan: "Jumlah laporan monitoring tepat waktu",
+    target_kegiatan_t1: "4 laporan",
+    target_kegiatan_t2: "4 laporan",
+    target_kegiatan_t3: "4 laporan",
+    target_kegiatan_t4: "4 laporan",
+    target_kegiatan_t5: "4 laporan",
+    penanggung_jawab: "Subbag Pembinaan",
+  },
+];
+
 function detectDelimiter(header) {
   const options = ["\t", ";", ","];
   return options.reduce(
@@ -998,6 +1054,135 @@ function parseMatrixText(text) {
     const cells = splitDelimitedLine(line, delimiter);
     return Object.fromEntries(headers.map((header, index) => [header, cells[index] || ""]));
   });
+}
+
+function escapeDelimitedValue(value, delimiter) {
+  const text = String(value ?? "");
+  if (text.includes("\"") || text.includes("\n") || text.includes("\r") || text.includes(delimiter)) {
+    return `"${text.replaceAll("\"", "\"\"")}"`;
+  }
+  return text;
+}
+
+function buildDelimitedTemplate(delimiter) {
+  const lines = [
+    renstraTemplateHeaders.join(delimiter),
+    ...renstraTemplateRows.map((row) =>
+      renstraTemplateHeaders.map((header) => escapeDelimitedValue(row[header], delimiter)).join(delimiter)
+    ),
+  ];
+  return lines.join("\r\n");
+}
+
+function downloadBlob(filename, content, type) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function buildExcelHtmlTemplate() {
+  const headerCells = renstraTemplateHeaders.map((header) => `<th>${escapeHtml(header)}</th>`).join("");
+  const rows = renstraTemplateRows
+    .map((row) => `<tr>${renstraTemplateHeaders.map((header) => `<td>${escapeHtml(row[header])}</td>`).join("")}</tr>`)
+    .join("");
+  return `
+    <html>
+      <head><meta charset="utf-8" /></head>
+      <body>
+        <table>
+          <thead><tr>${headerCells}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+function buildPdfTemplate() {
+  const rows = [renstraTemplateHeaders, ...renstraTemplateRows.map((row) => renstraTemplateHeaders.map((header) => row[header]))];
+  const lines = [
+    "Template Matriks Renstra",
+    "Gunakan header berikut agar ekstraksi otomatis akurat.",
+    ...rows.map((row) => row.join("\t")),
+  ];
+  const escapePdf = (value) => String(value).replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
+  const stream = [
+    "BT",
+    "/F1 7 Tf",
+    "36 800 Td",
+    ...lines.flatMap((line, index) => [`(${escapePdf(line.slice(0, 220))}) Tj`, index === lines.length - 1 ? "" : "0 -18 Td"]),
+    "ET",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const objects = [
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    `5 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}\nendstream\nendobj\n`,
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object) => {
+    offsets.push(pdf.length);
+    pdf += object;
+  });
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
+function downloadRenstraTemplate(format) {
+  if (format === "csv") {
+    downloadBlob("template-matriks-renstra.csv", buildDelimitedTemplate(","), "text/csv;charset=utf-8");
+    return;
+  }
+
+  if (format === "tsv" || format === "txt") {
+    downloadBlob(`template-matriks-renstra.${format}`, buildDelimitedTemplate("\t"), "text/plain;charset=utf-8");
+    return;
+  }
+
+  if (format === "json") {
+    downloadBlob(
+      "template-matriks-renstra.json",
+      JSON.stringify({ rows: renstraTemplateRows }, null, 2),
+      "application/json;charset=utf-8"
+    );
+    return;
+  }
+
+  if (format === "xlsx" && window.XLSX) {
+    const worksheet = window.XLSX.utils.json_to_sheet(renstraTemplateRows, { header: renstraTemplateHeaders });
+    const workbook = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(workbook, worksheet, "Matriks Renstra");
+    window.XLSX.writeFile(workbook, "template-matriks-renstra.xlsx");
+    return;
+  }
+
+  if (format === "xls") {
+    downloadBlob("template-matriks-renstra.xls", buildExcelHtmlTemplate(), "application/vnd.ms-excel;charset=utf-8");
+    return;
+  }
+
+  if (format === "pdf") {
+    downloadBlob("template-matriks-renstra.pdf", buildPdfTemplate(), "application/pdf");
+    return;
+  }
+
+  alert("Format Excel .xlsx membutuhkan SheetJS. Pastikan browser terhubung internet, atau pilih format XLS/CSV/JSON.");
 }
 
 function indicatorsFromColumns(row, indicatorAliases, targetAliases) {
@@ -1170,7 +1355,24 @@ async function extractPdfText(file) {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    pages.push(content.items.map((item) => item.str).join("\t"));
+    const lines = content.items.reduce((groups, item) => {
+      const y = Math.round(item.transform[5]);
+      const line = groups.get(y) || [];
+      line.push(item);
+      groups.set(y, line);
+      return groups;
+    }, new Map());
+    pages.push(
+      [...lines.entries()]
+        .sort((left, right) => right[0] - left[0])
+        .map(([, items]) =>
+          items
+            .sort((left, right) => left.transform[4] - right.transform[4])
+            .map((item) => item.str)
+            .join("\t")
+        )
+        .join("\n")
+    );
   }
 
   return pages.join("\n");
@@ -2213,6 +2415,10 @@ document.querySelector("#matrixFile").addEventListener("change", async (event) =
 document.querySelector("#clearMatrix").addEventListener("click", () => {
   document.querySelector("#matrixFile").value = "";
   document.querySelector("#matrixText").value = "";
+});
+
+document.querySelector("#downloadRenstraTemplate").addEventListener("click", () => {
+  downloadRenstraTemplate(document.querySelector("#renstraTemplateFormat").value);
 });
 
 document.querySelector("#importMatrix").addEventListener("click", () => {
