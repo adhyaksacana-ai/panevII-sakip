@@ -7,7 +7,30 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <section class="login-shell" id="loginShell">
+      <form class="login-card" id="loginForm">
+        <div class="brand login-brand">
+          <div class="brand-mark">K</div>
+          <div>
+            <strong>SAKIP Kejaksaan</strong>
+            <span>Masuk ke sistem akuntabilitas kinerja</span>
+          </div>
+        </div>
+        <label>
+          Username
+          <input name="username" autocomplete="username" placeholder="admin" required />
+        </label>
+        <label>
+          Password
+          <input name="password" autocomplete="current-password" placeholder="admin123" type="password" required />
+        </label>
+        <button class="primary-button" type="submit">Masuk</button>
+        <p class="login-message" id="loginMessage"></p>
+        <p class="helper-text">Akun demo: admin / admin123</p>
+      </form>
+    </section>
+
+    <main class="app-shell" id="appShell" hidden>
       <aside class="sidebar" aria-label="Navigasi utama">
         <div class="brand">
           <div class="brand-mark">K</div>
@@ -27,6 +50,9 @@
           <button class="nav-item" data-page="rencana" type="button">
             <span>Rencana Kinerja Tahunan</span>
           </button>
+          <button class="nav-item" data-page="iku" type="button">
+            <span>IKU</span>
+          </button>
           <button class="nav-item" data-page="perjanjian" type="button">
             <span>Perjanjian Kinerja</span>
           </button>
@@ -42,14 +68,25 @@
           <button class="nav-item" data-page="evaluasi-akip" type="button">
             <span>Evaluasi AKIP</span>
           </button>
+          <button class="nav-item" data-page="akun-satker" type="button">
+            <span>Akun Satker</span>
+          </button>
         </nav>
 
         <div class="profile-box">
           <span class="profile-dot"></span>
           <div>
-            <strong>Admin SAKIP</strong>
-            <small>Kejaksaan Negeri</small>
+            <strong id="profileName">Admin SAKIP</strong>
+            <small id="profileRole">Kejaksaan Negeri</small>
           </div>
+          <button class="icon-button logout-button" id="logoutButton" type="button" aria-label="Keluar dari aplikasi">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M10 17l5-5-5-5"></path>
+              <path d="M15 12H3"></path>
+              <path d="M21 3h-8a2 2 0 0 0-2 2v3"></path>
+              <path d="M11 16v3a2 2 0 0 0 2 2h8V3"></path>
+            </svg>
+          </button>
         </div>
       </aside>
 
@@ -327,6 +364,107 @@
           </section>
         </section>
 
+        <section class="content-page" id="iku">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Indikator Kinerja Utama</h2>
+                <p class="panel-copy">Sasaran, indikator, dan target tersinkron langsung dari Matriks Renstra.</p>
+              </div>
+              <div class="tree-actions">
+                <select id="ikuYearSelect" aria-label="Pilih tahun target IKU"></select>
+                <span class="badge">Sinkron Renstra</span>
+              </div>
+            </div>
+            <div class="iku-summary" id="ikuSummary"></div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Daftar IKU dan Formulasi</h2>
+                <p class="panel-copy">Atur metode perhitungan untuk setiap indikator strategis, program, dan kegiatan.</p>
+              </div>
+              <button class="ghost-button" id="resetIkuFormulas" type="button">Reset Formulasi</button>
+            </div>
+            <div class="table-wrap">
+              <table class="iku-table">
+                <thead>
+                  <tr>
+                    <th>Level</th>
+                    <th>Sasaran</th>
+                    <th>Indikator</th>
+                    <th>Target Tahun</th>
+                    <th>Formulasi Perhitungan</th>
+                    <th>Parameter</th>
+                  </tr>
+                </thead>
+                <tbody id="ikuRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="content-page" id="akun-satker">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Input Akun Satker</h2>
+                <p class="panel-copy">Daftarkan akun login untuk Kejaksaan Agung, Kejaksaan Tinggi, Kejaksaan Negeri, dan Cabang Kejaksaan Negeri.</p>
+              </div>
+              <span class="badge">Akun Otomatis</span>
+            </div>
+            <form class="satker-form" id="satkerForm">
+              <label>
+                Tingkat Satker
+                <select name="satkerLevel" required>
+                  <option value="Kejaksaan Agung">Kejaksaan Agung</option>
+                  <option value="Kejaksaan Tinggi">Kejaksaan Tinggi</option>
+                  <option value="Kejaksaan Negeri">Kejaksaan Negeri</option>
+                  <option value="Cabang Kejaksaan Negeri">Cabang Kejaksaan Negeri</option>
+                </select>
+              </label>
+              <label>
+                Nama Satker
+                <input name="satkerName" placeholder="Contoh: Kejaksaan Negeri Bandung" required />
+              </label>
+              <label>
+                Wilayah
+                <input name="satkerRegion" placeholder="Contoh: Jawa Barat" />
+              </label>
+              <div class="form-actions">
+                <button class="primary-button" type="submit">Buat Akun</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Daftar Akun Satker</h2>
+                <p class="panel-copy">Username dan password muncul otomatis. Password dapat di-refresh apabila lupa.</p>
+              </div>
+              <button class="ghost-button" id="reloadSatkerAccounts" type="button">Muat Ulang</button>
+            </div>
+            <div class="table-wrap">
+              <table class="satker-table">
+                <thead>
+                  <tr>
+                    <th>Tingkat</th>
+                    <th>Nama Satker</th>
+                    <th>Wilayah</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="satkerAccountRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
         <section class="content-page" id="perjanjian">
           <section class="panel">
             <div class="panel-header">
@@ -593,6 +731,27 @@
           <textarea rows="3">Capaian berjalan sesuai target, eviden menunggu verifikasi.</textarea>
         </label>
         <button class="primary-button" value="default" type="submit">Simpan</button>
+      </form>
+    </dialog>
+
+    <dialog id="logoutDialog">
+      <form method="dialog" class="modal logout-modal">
+        <div class="logout-mark">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M10 17l5-5-5-5"></path>
+            <path d="M15 12H3"></path>
+            <path d="M21 3h-8a2 2 0 0 0-2 2v3"></path>
+            <path d="M11 16v3a2 2 0 0 0 2 2h8V3"></path>
+          </svg>
+        </div>
+        <div>
+          <h2>Keluar dari SAKIP?</h2>
+          <p class="helper-text">Sesi akan ditutup dan halaman kembali ke layar login.</p>
+        </div>
+        <div class="logout-actions">
+          <button class="ghost-button" value="cancel" type="submit">Batal</button>
+          <button class="primary-button danger-button" id="confirmLogout" value="confirm" type="button">Keluar</button>
+        </div>
       </form>
     </dialog>
 

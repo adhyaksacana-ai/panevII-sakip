@@ -13,6 +13,10 @@ const goals = [
   },
 ];
 
+const authStorageKey = "sakipAuthSession";
+const satkerAccountsStorageKey = "sakipSatkerAccounts";
+let currentUser = null;
+
 const defaultCascades = [
   {
     strategic: "Meningkatnya penanganan perkara yang profesional",
@@ -192,6 +196,9 @@ const defaultRenstra = [
 
 let renstraItems = structuredClone(defaultRenstra);
 let editingRenstraIndex = null;
+let ikuFormulas = loadIkuFormulas();
+let openIkuFormulaKeys = new Set();
+let satkerAccounts = loadSatkerAccounts();
 
 const defaultRealizations = [
   {
@@ -224,6 +231,8 @@ const titles = {
   dashboard: "Dashboard Kinerja",
   renstra: "Matriks Renstra Satker",
   rencana: "Rencana Kinerja Tahunan",
+  iku: "Indikator Kinerja Utama",
+  "akun-satker": "Akun Satker",
   perjanjian: "Perjanjian Kinerja",
   realisasi: "Realisasi Kinerja",
   eviden: "Dokumen AKIP",
@@ -237,6 +246,111 @@ function escapeHtml(value) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+}
+
+function loadIkuFormulas() {
+  try {
+    return JSON.parse(window.localStorage.getItem("sakipIkuFormulas") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function persistIkuFormulas() {
+  window.localStorage.setItem("sakipIkuFormulas", JSON.stringify(ikuFormulas));
+}
+
+function loadSatkerAccounts() {
+  try {
+    return JSON.parse(window.localStorage.getItem(satkerAccountsStorageKey) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function persistSatkerAccounts() {
+  window.localStorage.setItem(satkerAccountsStorageKey, JSON.stringify(satkerAccounts));
+}
+
+function isBackendAvailable() {
+  return window.location.protocol === "http:" || window.location.protocol === "https:";
+}
+
+function getStoredAuth() {
+  try {
+    return JSON.parse(window.localStorage.getItem(authStorageKey) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function storeAuth(session) {
+  window.localStorage.setItem(authStorageKey, JSON.stringify(session));
+}
+
+function clearAuth() {
+  window.localStorage.removeItem(authStorageKey);
+  currentUser = null;
+}
+
+async function apiRequest(path, options = {}) {
+  const session = getStoredAuth();
+  const headers = {
+    "content-type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (session?.token) headers.authorization = `Bearer ${session.token}`;
+
+  const response = await fetch(path, {
+    ...options,
+    headers,
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error || "Request API gagal.");
+  }
+
+  return payload;
+}
+
+function applyAuthenticatedUser(user) {
+  currentUser = user;
+  document.querySelector("#profileName").textContent = user.name || "Pengguna SAKIP";
+  document.querySelector("#profileRole").textContent = `${user.role || "User"} - ${user.unit || "Satuan Kerja"}`;
+  document.querySelector("#loginShell").hidden = true;
+  document.querySelector("#appShell").hidden = false;
+  loadSatkerAccountsFromServer().catch(() => renderSatkerAccounts());
+}
+
+function showLogin(message = "") {
+  document.querySelector("#loginShell").hidden = false;
+  document.querySelector("#appShell").hidden = true;
+  document.querySelector("#loginMessage").textContent = message;
+}
+
+async function initializeAuth() {
+  const session = getStoredAuth();
+
+  if (!session) {
+    showLogin();
+    return;
+  }
+
+  if (!isBackendAvailable()) {
+    applyAuthenticatedUser(session.user);
+    return;
+  }
+
+  try {
+    const { user } = await apiRequest("/api/auth/me");
+    storeAuth({ ...session, user });
+    applyAuthenticatedUser(user);
+  } catch {
+    clearAuth();
+    showLogin("Sesi berakhir. Silakan masuk kembali.");
+  }
 }
 
 function renderIndicatorList(indicators) {
@@ -472,6 +586,457 @@ function renderRenstraIndicatorsForYear(indicators, yearIndex, selectedYear) {
         .join("")}
     </ul>
   `;
+}
+
+function getIkuFormulaKey(item, level, indicator) {
+  return [item.period, item.unit, level, getSasaranByLevel(item, level), indicator.name].join("||");
+}
+
+function getDefaultIkuFormula(indicator) {
+  return {
+    method: "percentage_manual",
+    numerator: "Realisasi",
+    denominator: "Target",
+    unit: "%",
+    note: "Capaian dihitung dari realisasi dibandingkan target.",
+    manualValueLabel: "Nilai capaian",
+    apiNumeratorKey: "",
+    apiNumeratorField: "",
+    apiDenominatorKey: "",
+    apiDenominatorField: "",
+    formulaPrompt: "",
+    generatedFormula: "",
+    dataSources: [],
+    saved: false,
+  };
+}
+
+function getIkuFormula(item, level, indicator) {
+  const key = getIkuFormulaKey(item, level, indicator);
+  return {
+    ...getDefaultIkuFormula(indicator),
+    ...(ikuFormulas[key] || {}),
+  };
+}
+
+function getIkuFormulaText(formula) {
+  if (formula.method === "manual_value") return "Capaian = Nilai manual tanpa rumus";
+  if (formula.method === "percentage_api") return "Capaian = Data pembilang API / data penyebut API x 100";
+  if (formula.method === "ai_generated") return formula.generatedFormula || "Generate rumus AI untuk menentukan sumber data";
+  return "Capaian = Realisasi / Target x 100";
+}
+
+function getApiFieldOptions(apiKey) {
+  if (!apiKey) return [];
+  const seed = apiKey.slice(-4).toUpperCase() || "DATA";
+  return [
+    { value: `realisasi_${seed}`, label: `Realisasi ${seed}` },
+    { value: `target_${seed}`, label: `Target ${seed}` },
+    { value: `volume_${seed}`, label: `Volume ${seed}` },
+    { value: `total_${seed}`, label: `Total ${seed}` },
+  ];
+}
+
+function getFormulaSourceNames(text) {
+  const sourcePattern = /\b(?:data|jumlah|total|nilai|target|realisasi|volume|output|perkara|laporan|dokumen|layanan|anggaran)\s+[a-z0-9\s-]{0,38}/gi;
+  const matches = [...String(text).matchAll(sourcePattern)]
+    .map((match) => match[0].trim().replace(/\s+/g, " "))
+    .filter((match) => match.length > 4);
+  const uniqueMatches = [...new Set(matches)].slice(0, 4);
+  return uniqueMatches.length ? uniqueMatches : ["Realisasi indikator", "Target indikator"];
+}
+
+function generateIkuFormulaFromPrompt(prompt) {
+  const sources = getFormulaSourceNames(prompt);
+  const sourceKeys = sources.map((source, index) => ({
+    name: source,
+    apiKey: "",
+    selectedField: "",
+    id: `source_${index + 1}`,
+  }));
+
+  return {
+    generatedFormula:
+      sources.length > 1
+        ? `Capaian = (${sources[0]} / ${sources[1]}) x 100`
+        : `Capaian = ${sources[0]}`,
+    dataSources: sourceKeys,
+  };
+}
+
+function renderApiFieldSelect(key, field, value, apiKey, label) {
+  const options = getApiFieldOptions(apiKey);
+  return `
+    <label>
+      ${label}
+      <select data-iku-field="${field}" data-iku-key="${escapeHtml(key)}" ${options.length ? "" : "disabled"}>
+        <option value="">${options.length ? "Pilih data" : "Load API dahulu"}</option>
+        ${options
+          .map((option) => `<option value="${escapeHtml(option.value)}" ${value === option.value ? "selected" : ""}>${escapeHtml(option.label)}</option>`)
+          .join("")}
+      </select>
+    </label>
+  `;
+}
+
+function renderFormulaControls(key, formula) {
+  if (formula.method === "manual_value") {
+    return `
+      <div class="iku-parameter-grid compact">
+        <label>
+          Label Nilai
+          <input data-iku-field="manualValueLabel" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.manualValueLabel)}" placeholder="Contoh: Nilai capaian" />
+        </label>
+        <label>
+          Satuan
+          <input data-iku-field="unit" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.unit)}" placeholder="Satuan" />
+        </label>
+        <label class="wide-field">
+          Keterangan
+          <input data-iku-field="note" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.note)}" placeholder="Tanpa formulasi, nilai diinput manual" />
+        </label>
+      </div>
+    `;
+  }
+
+  if (formula.method === "percentage_api") {
+    return `
+      <div class="iku-parameter-grid api-grid">
+        <label>
+          API Key Pembilang
+          <input data-iku-field="apiNumeratorKey" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.apiNumeratorKey)}" placeholder="Masukkan API key pembilang" />
+        </label>
+        ${renderApiFieldSelect(key, "apiNumeratorField", formula.apiNumeratorField, formula.apiNumeratorKey, "Data Pembilang")}
+        <button class="ghost-button" data-load-api="apiNumeratorKey" data-iku-key="${escapeHtml(key)}" type="button">Load Pembilang</button>
+        <label>
+          API Key Penyebut
+          <input data-iku-field="apiDenominatorKey" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.apiDenominatorKey)}" placeholder="Masukkan API key penyebut" />
+        </label>
+        ${renderApiFieldSelect(key, "apiDenominatorField", formula.apiDenominatorField, formula.apiDenominatorKey, "Data Penyebut")}
+        <button class="ghost-button" data-load-api="apiDenominatorKey" data-iku-key="${escapeHtml(key)}" type="button">Load Penyebut</button>
+      </div>
+    `;
+  }
+
+  if (formula.method === "ai_generated") {
+    return `
+      <div class="iku-ai-builder">
+        <label>
+          Rumus atau Instruksi AI
+          <textarea data-iku-field="formulaPrompt" data-iku-key="${escapeHtml(key)}" rows="3" placeholder="Contoh: hitung persentase laporan tepat waktu dibanding seluruh laporan">${escapeHtml(formula.formulaPrompt)}</textarea>
+        </label>
+        <div class="form-actions">
+          <button class="ghost-button" data-generate-iku-formula data-iku-key="${escapeHtml(key)}" type="button">Generate AI</button>
+        </div>
+        <strong>${escapeHtml(formula.generatedFormula || "Belum ada rumus hasil generate.")}</strong>
+        <div class="iku-source-list">
+          ${formula.dataSources
+            .map(
+              (source, index) => `
+                <div class="iku-source-row">
+                  <span>${escapeHtml(source.name)}</span>
+                  <input data-iku-source-field="apiKey" data-iku-source-index="${index}" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(source.apiKey || "")}" placeholder="API key sumber data" />
+                  ${renderApiFieldSelect(key, `sourceField:${index}`, source.selectedField, source.apiKey, "Data")}
+                  <button class="ghost-button" data-load-source-api="${index}" data-iku-key="${escapeHtml(key)}" type="button">Load Data</button>
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="iku-parameter-grid">
+      <label>
+        Pembilang
+        <input data-iku-field="numerator" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.numerator)}" placeholder="Pembilang" />
+      </label>
+      <label>
+        Penyebut
+        <input data-iku-field="denominator" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.denominator)}" placeholder="Penyebut" />
+      </label>
+      <label>
+        Satuan
+        <input data-iku-field="unit" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.unit)}" placeholder="Satuan" />
+      </label>
+      <label class="wide-field">
+        Keterangan
+        <input data-iku-field="note" data-iku-key="${escapeHtml(key)}" value="${escapeHtml(formula.note)}" placeholder="Keterangan penyebut dan pembilang" />
+      </label>
+    </div>
+  `;
+}
+
+function renderEyeIcon(isOpen) {
+  if (isOpen) {
+    return `
+      <svg aria-hidden="true" viewBox="0 0 24 24">
+        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+    `;
+  }
+
+  return `
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M3 3l18 18"></path>
+      <path d="M10.6 10.6A2 2 0 0 0 12 14a2 2 0 0 0 1.4-.6"></path>
+      <path d="M9.5 5.5A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17.2 17.2 0 0 1-3.2 4.2"></path>
+      <path d="M6.6 6.7C3.6 8.6 2 12 2 12s3.5 7 10 7c1.4 0 2.7-.3 3.8-.8"></path>
+    </svg>
+  `;
+}
+
+function getIkuRows() {
+  return renstraItems.flatMap((item, renstraIndex) =>
+    ["strategic", "program", "activity"].flatMap((level) =>
+      getIndicatorsByLevel(item, level).map((indicator, indicatorIndex) => ({
+        item,
+        renstraIndex,
+        level,
+        indicator,
+        indicatorIndex,
+      }))
+    )
+  );
+}
+
+function slugifyAccount(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, ".")
+    .replace(/\.+/g, ".")
+    .slice(0, 42);
+}
+
+function generateLocalPassword() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const randomPart = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+  return `Skp-${randomPart}`;
+}
+
+function generateLocalSatkerUsername(level, name) {
+  const prefixMap = {
+    "Kejaksaan Agung": "kejakgung",
+    "Kejaksaan Tinggi": "kejati",
+    "Kejaksaan Negeri": "kejari",
+    "Cabang Kejaksaan Negeri": "cabjari",
+  };
+  const base = `${prefixMap[level] || "satker"}.${slugifyAccount(name) || "baru"}`;
+  let username = base;
+  let suffix = 2;
+  while (satkerAccounts.some((account) => account.username === username) || ["admin", "operator"].includes(username)) {
+    username = `${base}.${suffix}`;
+    suffix += 1;
+  }
+  return username;
+}
+
+function renderSatkerAccounts() {
+  const rows = document.querySelector("#satkerAccountRows");
+  if (!rows) return;
+
+  if (!satkerAccounts.length) {
+    rows.innerHTML = "<tr><td colspan=\"7\">Belum ada akun satker. Input nama satker untuk membuat akun login otomatis.</td></tr>";
+    return;
+  }
+
+  rows.innerHTML = satkerAccounts
+    .map(
+      (account) => `
+        <tr>
+          <td><span class="badge">${escapeHtml(account.level)}</span></td>
+          <td><strong>${escapeHtml(account.name)}</strong></td>
+          <td>${escapeHtml(account.region || "-")}</td>
+          <td><code>${escapeHtml(account.username)}</code></td>
+          <td><code>${escapeHtml(account.password)}</code></td>
+          <td>${escapeHtml(account.status || "Aktif")}</td>
+          <td>
+            <div class="row-actions">
+              <button class="ghost-button" data-refresh-satker-password="${escapeHtml(account.id)}" type="button">Refresh Password</button>
+            </div>
+          </td>
+        </tr>
+      `
+    )
+    .join("");
+}
+
+async function loadSatkerAccountsFromServer() {
+  if (!isBackendAvailable() || !getStoredAuth()?.token) {
+    renderSatkerAccounts();
+    return;
+  }
+
+  const { accounts } = await apiRequest("/api/satker-accounts");
+  satkerAccounts = accounts;
+  persistSatkerAccounts();
+  renderSatkerAccounts();
+}
+
+async function createSatkerAccount(payload) {
+  if (isBackendAvailable() && getStoredAuth()?.token) {
+    const { account } = await apiRequest("/api/satker-accounts", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    satkerAccounts.unshift(account);
+  } else {
+    satkerAccounts.unshift({
+      id: crypto.randomUUID(),
+      level: payload.level,
+      name: payload.name,
+      region: payload.region,
+      username: generateLocalSatkerUsername(payload.level, payload.name),
+      password: generateLocalPassword(),
+      role: "Satker",
+      unit: payload.name,
+      status: "Aktif",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  persistSatkerAccounts();
+  renderSatkerAccounts();
+}
+
+async function refreshSatkerPassword(accountId) {
+  if (isBackendAvailable() && getStoredAuth()?.token) {
+    const { account } = await apiRequest(`/api/satker-accounts/${encodeURIComponent(accountId)}/refresh-password`, {
+      method: "POST",
+      body: "{}",
+    });
+    satkerAccounts = satkerAccounts.map((item) => (item.id === account.id ? account : item));
+  } else {
+    satkerAccounts = satkerAccounts.map((item) =>
+      item.id === accountId ? { ...item, password: generateLocalPassword(), updatedAt: new Date().toISOString() } : item
+    );
+  }
+
+  persistSatkerAccounts();
+  renderSatkerAccounts();
+}
+
+function populateIkuYearSelect() {
+  const select = document.querySelector("#ikuYearSelect");
+  if (!select) return;
+
+  const currentValue = select.value;
+  const years = getPerformanceYears();
+  select.innerHTML = years.map((year) => `<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`).join("");
+
+  if (years.includes(currentValue)) {
+    select.value = currentValue;
+  } else if (years.includes("2026")) {
+    select.value = "2026";
+  }
+}
+
+function renderIkuSummary() {
+  const summary = document.querySelector("#ikuSummary");
+  if (!summary) return;
+  const rows = getIkuRows();
+  const counts = rows.reduce(
+    (total, row) => {
+      total[row.level] += 1;
+      return total;
+    },
+    { strategic: 0, program: 0, activity: 0 }
+  );
+
+  summary.innerHTML = `
+    <article class="iku-summary-item">
+      <span>Sasaran Strategis</span>
+      <strong>${counts.strategic}</strong>
+    </article>
+    <article class="iku-summary-item">
+      <span>Sasaran Program</span>
+      <strong>${counts.program}</strong>
+    </article>
+    <article class="iku-summary-item">
+      <span>Sasaran Kegiatan</span>
+      <strong>${counts.activity}</strong>
+    </article>
+    <article class="iku-summary-item">
+      <span>Total Indikator</span>
+      <strong>${rows.length}</strong>
+    </article>
+  `;
+}
+
+function renderIkuRows() {
+  const tableRows = document.querySelector("#ikuRows");
+  if (!tableRows) return;
+  const selectedYear = document.querySelector("#ikuYearSelect")?.value || getPerformanceYears()[0] || "Tahun 1";
+  const rows = getIkuRows();
+
+  if (!rows.length) {
+    tableRows.innerHTML = "<tr><td colspan=\"6\">Belum ada data IKU. Input atau impor Matriks Renstra terlebih dahulu.</td></tr>";
+    renderIkuSummary();
+    return;
+  }
+
+  tableRows.innerHTML = rows
+    .map(({ item, level, indicator, indicatorIndex }) => {
+      const yearIndex = getTargetIndexForYear(item, selectedYear);
+      const formula = getIkuFormula(item, level, indicator);
+      const key = getIkuFormulaKey(item, level, indicator);
+      const isFormulaOpen = openIkuFormulaKeys.has(key);
+
+      return `
+        <tr>
+          <td><span class="badge">${escapeHtml(getLevelLabel(level))}</span></td>
+          <td>
+            <strong>${escapeHtml(getSasaranByLevel(item, level))}</strong>
+            <small>${escapeHtml(item.unit)} - ${escapeHtml(item.period)}</small>
+          </td>
+          <td>${escapeHtml(indicator.name)}</td>
+          <td>
+            <strong>${escapeHtml(selectedYear)}</strong>
+            <span>${escapeHtml(indicator.targets[yearIndex] || indicator.targets[0] || "-")}</span>
+          </td>
+          <td>
+            <div class="iku-formula-cell">
+              <div class="iku-formula-head">
+                <button class="icon-button eye-button" data-toggle-iku-formula data-iku-key="${escapeHtml(key)}" type="button" aria-label="${isFormulaOpen ? "Tutup formulasi" : "Buka formulasi"}">
+                  ${renderEyeIcon(isFormulaOpen)}
+                </button>
+                <div>
+                  <strong>Formulasi Perhitungan</strong>
+                  <small>${escapeHtml(getIkuFormulaText(formula))}</small>
+                </div>
+              </div>
+              <span class="iku-save-state">${formula.saved ? "Tersimpan" : "Belum disimpan"}</span>
+            </div>
+          </td>
+          <td>
+            <div class="iku-formula-panel ${isFormulaOpen ? "open" : ""}">
+              <select data-iku-field="method" data-iku-key="${escapeHtml(key)}">
+                <option value="percentage_manual" ${formula.method === "percentage_manual" ? "selected" : ""}>Persentase Manual</option>
+                <option value="manual_value" ${formula.method === "manual_value" ? "selected" : ""}>Manual Nilai</option>
+                <option value="percentage_api" ${formula.method === "percentage_api" ? "selected" : ""}>Persentase API</option>
+                <option value="ai_generated" ${formula.method === "ai_generated" ? "selected" : ""}>Generate AI</option>
+              </select>
+              ${renderFormulaControls(key, formula)}
+              <button class="ghost-button" data-save-iku-formula data-iku-key="${escapeHtml(key)}" type="button">Simpan Formulasi</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+  renderIkuSummary();
+}
+
+function refreshIkuViews() {
+  populateIkuYearSelect();
+  renderIkuRows();
 }
 
 function populatePerformanceYearSelect() {
@@ -719,6 +1284,7 @@ function refreshCascadeViews() {
   renderPlans();
   populatePerformanceYearSelect();
   renderPerformanceTree();
+  refreshIkuViews();
   populateCascadeSelects();
   populateAgreementCascadeSelect();
   populateAgreementIndicatorSelect();
@@ -2122,7 +2688,238 @@ document.querySelectorAll(".nav-item").forEach((button) => {
   button.addEventListener("click", () => switchPage(button.dataset.page));
 });
 
+document.querySelector("#loginForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const username = String(form.get("username") || "").trim();
+  const password = String(form.get("password") || "");
+  const loginMessage = document.querySelector("#loginMessage");
+  loginMessage.textContent = "Memeriksa akun...";
+
+  try {
+    if (!isBackendAvailable()) {
+      const localSatker = satkerAccounts.find((account) => account.username === username && account.password === password);
+      if (!(username === "admin" && password === "admin123") && !localSatker) {
+        throw new Error("Username atau password salah.");
+      }
+      const user = localSatker
+        ? {
+            id: localSatker.id,
+            username: localSatker.username,
+            name: localSatker.name,
+            role: localSatker.level,
+            unit: localSatker.name,
+          }
+        : {
+            id: "admin",
+            username: "admin",
+            name: "Admin SAKIP",
+            role: "Administrator Demo",
+            unit: "Kejaksaan Negeri",
+          };
+      storeAuth({ token: "demo-file-session", user });
+      applyAuthenticatedUser(user);
+      event.currentTarget.reset();
+      return;
+    }
+
+    const session = await apiRequest("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+    storeAuth(session);
+    applyAuthenticatedUser(session.user);
+    event.currentTarget.reset();
+  } catch (error) {
+    loginMessage.textContent = error.message;
+  }
+});
+
+document.querySelector("#logoutButton").addEventListener("click", async () => {
+  document.querySelector("#logoutDialog").showModal();
+});
+
+document.querySelector("#confirmLogout").addEventListener("click", async () => {
+  document.querySelector("#confirmLogout").textContent = "Keluar...";
+  try {
+    if (isBackendAvailable() && getStoredAuth()?.token) {
+      await apiRequest("/api/auth/logout", { method: "POST", body: "{}" });
+    }
+  } catch {
+    // Logout tetap dilakukan secara lokal walau server tidak merespons.
+  }
+  clearAuth();
+  document.querySelector("#logoutDialog").close();
+  document.querySelector("#confirmLogout").textContent = "Keluar";
+  showLogin("Anda sudah keluar.");
+});
+
+document.querySelector("#satkerForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  try {
+    await createSatkerAccount({
+      level: form.get("satkerLevel"),
+      name: String(form.get("satkerName") || "").trim(),
+      region: String(form.get("satkerRegion") || "").trim(),
+    });
+    event.currentTarget.reset();
+    alert("Akun satker berhasil dibuat.");
+  } catch (error) {
+    alert(`Gagal membuat akun satker: ${error.message}`);
+  }
+});
+
+document.querySelector("#reloadSatkerAccounts").addEventListener("click", () => {
+  loadSatkerAccountsFromServer().catch((error) => alert(`Gagal memuat akun satker: ${error.message}`));
+});
+
+document.querySelector("#satkerAccountRows").addEventListener("click", async (event) => {
+  const refreshButton = event.target.closest("[data-refresh-satker-password]");
+  if (!refreshButton) return;
+
+  try {
+    await refreshSatkerPassword(refreshButton.dataset.refreshSatkerPassword);
+    alert("Password baru berhasil dibuat.");
+  } catch (error) {
+    alert(`Gagal refresh password: ${error.message}`);
+  }
+});
+
 document.querySelector("#performanceYearSelect")?.addEventListener("change", renderPerformanceTree);
+document.querySelector("#ikuYearSelect")?.addEventListener("change", renderIkuRows);
+
+function updateIkuFormulaField(key, fieldName, value) {
+  const formula = {
+    ...getDefaultIkuFormula({ name: "" }),
+    ...(ikuFormulas[key] || {}),
+  };
+
+  if (fieldName.startsWith("sourceField:")) {
+    const sourceIndex = Number(fieldName.split(":")[1]);
+    formula.dataSources = [...(formula.dataSources || [])];
+    formula.dataSources[sourceIndex] = {
+      ...(formula.dataSources[sourceIndex] || {}),
+      selectedField: value,
+    };
+  } else {
+    formula[fieldName] = value;
+  }
+
+  formula.saved = false;
+  ikuFormulas[key] = formula;
+}
+
+document.querySelector("#ikuRows")?.addEventListener("input", (event) => {
+  const field = event.target.closest("[data-iku-field]");
+  if (field) {
+    updateIkuFormulaField(field.dataset.ikuKey, field.dataset.ikuField, field.value);
+    return;
+  }
+
+  const sourceField = event.target.closest("[data-iku-source-field]");
+  if (!sourceField) return;
+  const key = sourceField.dataset.ikuKey;
+  const sourceIndex = Number(sourceField.dataset.ikuSourceIndex);
+  const formula = {
+    ...getDefaultIkuFormula({ name: "" }),
+    ...(ikuFormulas[key] || {}),
+  };
+  formula.dataSources = [...(formula.dataSources || [])];
+  formula.dataSources[sourceIndex] = {
+    ...(formula.dataSources[sourceIndex] || {}),
+    [sourceField.dataset.ikuSourceField]: sourceField.value,
+  };
+  formula.saved = false;
+  ikuFormulas[key] = formula;
+});
+
+document.querySelector("#ikuRows")?.addEventListener("change", (event) => {
+  const field = event.target.closest("[data-iku-field]");
+  if (field) {
+    updateIkuFormulaField(field.dataset.ikuKey, field.dataset.ikuField, field.value);
+    renderIkuRows();
+    return;
+  }
+
+  const sourceField = event.target.closest("[data-iku-source-field]");
+  if (sourceField) renderIkuRows();
+});
+
+document.querySelector("#ikuRows")?.addEventListener("click", (event) => {
+  const toggleButton = event.target.closest("[data-toggle-iku-formula]");
+  const generateButton = event.target.closest("[data-generate-iku-formula]");
+  const loadApiButton = event.target.closest("[data-load-api]");
+  const loadSourceApiButton = event.target.closest("[data-load-source-api]");
+  const saveButton = event.target.closest("[data-save-iku-formula]");
+
+  if (toggleButton) {
+    const key = toggleButton.dataset.ikuKey;
+    if (openIkuFormulaKeys.has(key)) {
+      openIkuFormulaKeys.delete(key);
+    } else {
+      openIkuFormulaKeys.add(key);
+    }
+    renderIkuRows();
+    return;
+  }
+
+  if (generateButton) {
+    const key = generateButton.dataset.ikuKey;
+    const formula = {
+      ...getDefaultIkuFormula({ name: "" }),
+      ...(ikuFormulas[key] || {}),
+    };
+    const generated = generateIkuFormulaFromPrompt(formula.formulaPrompt);
+    ikuFormulas[key] = {
+      ...formula,
+      ...generated,
+      saved: false,
+    };
+    renderIkuRows();
+    return;
+  }
+
+  if (loadApiButton) {
+    const key = loadApiButton.dataset.ikuKey;
+    const formula = ikuFormulas[key] || {};
+    const apiField = loadApiButton.dataset.loadApi;
+    if (!formula[apiField]) {
+      alert("Masukkan API key terlebih dahulu.");
+      return;
+    }
+    renderIkuRows();
+    return;
+  }
+
+  if (loadSourceApiButton) {
+    const key = loadSourceApiButton.dataset.ikuKey;
+    const sourceIndex = Number(loadSourceApiButton.dataset.loadSourceApi);
+    const source = ikuFormulas[key]?.dataSources?.[sourceIndex];
+    if (!source?.apiKey) {
+      alert("Masukkan API key sumber data terlebih dahulu.");
+      return;
+    }
+    renderIkuRows();
+    return;
+  }
+
+  if (!saveButton) return;
+  const key = saveButton.dataset.ikuKey;
+  ikuFormulas[key] = {
+    ...getDefaultIkuFormula({ name: "" }),
+    ...(ikuFormulas[key] || {}),
+    saved: true,
+  };
+  persistIkuFormulas();
+  renderIkuRows();
+});
+
+document.querySelector("#resetIkuFormulas")?.addEventListener("click", () => {
+  ikuFormulas = {};
+  persistIkuFormulas();
+  renderIkuRows();
+});
 
 document.querySelector("#openEntry").addEventListener("click", () => {
   document.querySelector("#entryDialog").showModal();
@@ -2345,6 +3142,7 @@ document.querySelector("#renstraForm").addEventListener("submit", (event) => {
   renderRenstraRows();
   populatePerformanceYearSelect();
   renderPerformanceTree();
+  refreshIkuViews();
   resetRenstraForm();
   alert("Matriks Renstra berhasil disimpan.");
 });
@@ -2372,6 +3170,7 @@ document.querySelector("#renstraRows").addEventListener("click", (event) => {
     renderRenstraRows();
     populatePerformanceYearSelect();
     renderPerformanceTree();
+    refreshIkuViews();
     if (editingRenstraIndex === index) resetRenstraForm();
   }
 });
@@ -2381,6 +3180,7 @@ document.querySelector("#resetRenstra").addEventListener("click", () => {
   renderRenstraRows();
   populatePerformanceYearSelect();
   renderPerformanceTree();
+  refreshIkuViews();
   resetRenstraForm();
 });
 
@@ -2435,6 +3235,7 @@ document.querySelector("#importMatrix").addEventListener("click", () => {
     renderRenstraRows();
     populatePerformanceYearSelect();
     renderPerformanceTree();
+    refreshIkuViews();
     alert(`${imported.length} baris Matriks Renstra berhasil diekstrak dan diinput otomatis.`);
   } catch (error) {
     alert(`Gagal membaca Matriks Renstra: ${error.message}`);
@@ -2544,6 +3345,7 @@ populateAgreementIndicatorSelect();
 populateRealizationCascadeSelect();
 populateRealizationIndicatorSelect();
 populatePerformanceYearSelect();
+refreshIkuViews();
 resetIndicatorInputs();
 resetRenstraIndicatorInputs();
 renderPlans();
@@ -2555,3 +3357,5 @@ renderAgreementPreview();
 renderAgreements();
 renderDocuments();
 renderReviews();
+renderSatkerAccounts();
+initializeAuth();

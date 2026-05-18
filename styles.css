@@ -46,6 +46,48 @@ textarea {
   min-height: 100vh;
 }
 
+.login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.login-shell[hidden],
+.app-shell[hidden] {
+  display: none;
+}
+
+.login-card {
+  display: grid;
+  width: min(420px, 100%);
+  gap: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  backdrop-filter: blur(12px);
+}
+
+.login-brand {
+  margin-bottom: 4px;
+  padding: 0 0 16px;
+  border-bottom-color: var(--line);
+  color: var(--ink);
+}
+
+.login-brand span {
+  color: var(--muted);
+}
+
+.login-message {
+  min-height: 20px;
+  margin: 0;
+  color: var(--accent);
+  font-size: 13px;
+}
+
 .sidebar {
   position: sticky;
   top: 0;
@@ -151,6 +193,32 @@ textarea {
   border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.09);
   backdrop-filter: blur(8px);
+}
+
+.profile-box > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.logout-button {
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.logout-button:hover {
+  background: rgba(180, 35, 53, 0.9);
+}
+
+.logout-button svg,
+.logout-mark svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .profile-dot {
@@ -822,6 +890,7 @@ tbody tr:last-child td {
 .cascade-form,
 .agreement-form,
 .renstra-form,
+.satker-form,
 .realization-form,
 .akip-toolbar {
   display: grid;
@@ -833,6 +902,7 @@ tbody tr:last-child td {
 .cascade-form .primary-button,
 .agreement-form .primary-button,
 .renstra-form .primary-button,
+.satker-form .primary-button,
 .realization-form .primary-button,
 .form-actions,
 .import-actions,
@@ -844,6 +914,7 @@ tbody tr:last-child td {
 .cascade-form .primary-button,
 .agreement-form .primary-button,
 .renstra-form .primary-button,
+.satker-form .primary-button,
 .realization-form .primary-button,
 .form-actions,
 .import-actions,
@@ -884,6 +955,10 @@ tbody tr:last-child td {
   min-width: 1400px;
 }
 
+.satker-table {
+  min-width: 1100px;
+}
+
 .realization-table {
   min-width: 1200px;
 }
@@ -893,6 +968,118 @@ tbody tr:last-child td {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
   margin: 16px 0;
+}
+
+.iku-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.iku-summary-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+  padding: 14px;
+}
+
+.iku-summary-item span,
+.iku-summary-item strong,
+.iku-table small,
+.iku-table span {
+  display: block;
+}
+
+.iku-summary-item span,
+.iku-table small,
+.iku-table span {
+  color: var(--muted);
+}
+
+.iku-summary-item strong {
+  margin-top: 6px;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.iku-table {
+  min-width: 1500px;
+}
+
+.iku-formula-cell,
+.iku-parameter-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.iku-formula-head {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.eye-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.iku-formula-panel {
+  display: none;
+  gap: 10px;
+}
+
+.iku-formula-panel.open {
+  display: grid;
+}
+
+.iku-parameter-grid {
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+}
+
+.iku-parameter-grid .wide-field,
+.iku-parameter-grid input:last-child {
+  grid-column: 1 / -1;
+}
+
+.iku-parameter-grid.compact {
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+}
+
+.iku-parameter-grid.api-grid {
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) max-content;
+  align-items: end;
+}
+
+.iku-ai-builder,
+.iku-source-list {
+  display: grid;
+  gap: 10px;
+}
+
+.iku-ai-builder textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.iku-source-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.8fr) minmax(180px, 1fr) minmax(180px, 1fr) max-content;
+  gap: 8px;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+  padding: 10px;
+}
+
+.iku-save-state {
+  font-size: 12px;
 }
 
 .akip-table {
@@ -1119,6 +1306,55 @@ dialog::backdrop {
   padding: 18px;
 }
 
+.logout-modal {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  padding: 24px;
+  text-align: center;
+}
+
+.logout-modal h2,
+.logout-modal p {
+  margin: 0;
+}
+
+.logout-modal p {
+  margin-top: 6px;
+}
+
+.logout-mark {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.logout-mark svg {
+  width: 28px;
+  height: 28px;
+}
+
+.logout-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.danger-button {
+  background: linear-gradient(135deg, var(--accent), #8f1827);
+  box-shadow: 0 12px 22px rgba(180, 35, 53, 0.18);
+}
+
+.danger-button:hover {
+  background: linear-gradient(135deg, #8f1827, var(--accent));
+  box-shadow: 0 14px 28px rgba(180, 35, 53, 0.22);
+}
+
 @media (max-width: 1000px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -1144,9 +1380,15 @@ dialog::backdrop {
   .cascade-form,
   .agreement-form,
   .renstra-form,
+  .satker-form,
   .realization-form,
   .akip-toolbar,
   .akip-summary,
+  .iku-summary,
+  .iku-parameter-grid,
+  .iku-parameter-grid.compact,
+  .iku-parameter-grid.api-grid,
+  .iku-source-row,
   .import-grid,
   .template-download {
     grid-template-columns: 1fr 1fr;
@@ -1183,9 +1425,15 @@ dialog::backdrop {
   .cascade-form,
   .agreement-form,
   .renstra-form,
+  .satker-form,
   .realization-form,
   .akip-toolbar,
   .akip-summary,
+  .iku-summary,
+  .iku-parameter-grid,
+  .iku-parameter-grid.compact,
+  .iku-parameter-grid.api-grid,
+  .iku-source-row,
   .import-grid,
   .template-download {
     grid-template-columns: 1fr;
