@@ -425,8 +425,8 @@
                 </select>
               </label>
               <label>
-                Nama Satker
-                <input name="satkerName" placeholder="Contoh: Kejaksaan Negeri Bandung" required />
+                Nama Bidang/Badan/Kota/Provinsi/Kabupaten/Kota
+                <input name="satkerName" placeholder="Contoh: Bidang Pidana Umum Bandung" required />
               </label>
               <label>
                 Wilayah
@@ -451,7 +451,7 @@
                 <thead>
                   <tr>
                     <th>Tingkat</th>
-                    <th>Nama Satker</th>
+                    <th>Nama Bidang/Badan/Kota/Provinsi/Kabupaten/Kota</th>
                     <th>Wilayah</th>
                     <th>Username</th>
                     <th>Password</th>
@@ -632,12 +632,69 @@
         </section>
 
         <section class="content-page" id="eviden">
-          <section class="panel">
-            <div class="panel-header">
-              <h2>Dokumen AKIP</h2>
-              <button class="primary-button small" type="button">Unggah Dokumen</button>
+          <section class="akip-upload-shell" aria-labelledby="akipUploadTitle">
+            <div class="akip-upload-header">
+              <div>
+                <p class="eyebrow">Dokumen AKIP</p>
+                <h2 id="akipUploadTitle">Unggah Dokumen AKIP</h2>
+                <p>Kelola dokumen perencanaan, pengukuran, pelaporan, dan evaluasi dalam satu alur unggah yang ringkas.</p>
+              </div>
+              <span class="upload-status-pill">Multi-unggah aktif</span>
             </div>
-            <div class="document-grid" id="documentGrid"></div>
+
+            <div class="upload-layout">
+              <section class="upload-workbench" aria-label="Area unggah dokumen">
+                <input
+                  id="akipDocumentInput"
+                  type="file"
+                  multiple
+                  hidden
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.zip,.rar,.jpg,.jpeg,.png"
+                />
+                <label class="upload-dropzone" id="akipDropzone" for="akipDocumentInput">
+                  <span class="upload-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 16V7"></path>
+                      <path d="m8 11 4-4 4 4"></path>
+                      <path d="M20 16.5a4 4 0 0 0-3.4-3.95A5.5 5.5 0 0 0 6.04 11.3 4.5 4.5 0 0 0 7.5 20H18a2.5 2.5 0 0 0 2-3.5Z"></path>
+                    </svg>
+                  </span>
+                  <strong>Seret & Lepas File di Sini</strong>
+                  <span>Pilih File dari Komputer Anda untuk mengunggah satu atau beberapa dokumen.</span>
+                  <span class="primary-button upload-pick-button">Pilih File</span>
+                </label>
+
+                <div class="selected-files-panel" id="selectedFilesPanel" hidden>
+                  <div class="section-heading">
+                    <div>
+                      <strong>Preview File yang Dipilih</strong>
+                      <span id="selectedFileSummary">Pilih jenis dokumen untuk setiap file sesuai urutan unggah.</span>
+                    </div>
+                    <button class="ghost-button" id="clearAkipFiles" type="button">Batal</button>
+                  </div>
+                  <div class="selected-file-list" id="selectedFileList"></div>
+                  <div class="upload-actions">
+                    <button class="ghost-button" id="cancelAkipUpload" type="button">Batal</button>
+                    <button class="primary-button" id="submitAkipUpload" type="button">Unggah Dokumen</button>
+                  </div>
+                </div>
+              </section>
+
+              <aside class="upload-insight" aria-label="Ringkasan unggah">
+                <div>
+                  <span>Total file</span>
+                  <strong id="uploadFileCount">0</strong>
+                </div>
+                <div>
+                  <span>Jenis dokumen</span>
+                  <strong id="uploadTypeCount">14</strong>
+                </div>
+                <div>
+                  <span>Status</span>
+                  <strong id="uploadOverallStatus">Siap</strong>
+                </div>
+              </aside>
+            </div>
           </section>
         </section>
 
@@ -715,6 +772,8 @@
         </section>
       </section>
     </main>
+
+    <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
 
     <dialog id="entryDialog">
       <form method="dialog" class="modal">

@@ -212,14 +212,25 @@ const defaultRealizations = [
 
 let realizations = structuredClone(defaultRealizations);
 
-const documents = [
-  ["Laporan Realisasi TW I", "PDF - terverifikasi"],
-  ["Matriks Perjanjian Kinerja", "XLSX - menunggu review"],
-  ["Dokumentasi Layanan Publik", "ZIP - perlu perbaikan"],
-  ["Notulen Rapat Evaluasi", "PDF - terverifikasi"],
-  ["SK Tim SAKIP", "PDF - terverifikasi"],
-  ["Rencana Aksi Kinerja", "DOCX - draft"],
+const akipDocumentTypes = [
+  "Renstra",
+  "IKU",
+  "Renja/RKT",
+  "Perjanjian Kinerja",
+  "Rencana Aksi",
+  "Laporan Kinerja",
+  "DPA",
+  "Pohon Kinerja & Cascading",
+  "LHE AKIP Internal",
+  "TL LHE AKIP Internal",
+  "Laporan Monev Renaksi",
+  "Pedoman Teknis Perencanaan",
+  "Pedoman Teknis Pengukuran & Pengumpulan Data Kinerja",
+  "Pedoman Teknis Evaluasi Internal",
 ];
+
+let selectedAkipFiles = [];
+let uploadProgressTimer = null;
 
 const reviews = [
   ["Kualitas Eviden", "Beberapa indikator membutuhkan bukti dukung yang lebih spesifik dan mudah ditelusuri."],
@@ -814,6 +825,17 @@ function slugifyAccount(value) {
     .slice(0, 42);
 }
 
+function normalizeAccountUsernamePart(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[^\w\s/-]/g, "")
+    .trim()
+    .replace(/[\s/-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 42);
+}
+
 function generateLocalPassword() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   const randomPart = Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
@@ -822,16 +844,19 @@ function generateLocalPassword() {
 
 function generateLocalSatkerUsername(level, name) {
   const prefixMap = {
-    "Kejaksaan Agung": "kejakgung",
-    "Kejaksaan Tinggi": "kejati",
-    "Kejaksaan Negeri": "kejari",
-    "Cabang Kejaksaan Negeri": "cabjari",
+    "Kejaksaan Agung": "KA",
+    "Kejaksaan Tinggi": "KT",
+    "Kejaksaan Negeri": "KN",
+    "Cabang Kejaksaan Negeri": "CKN",
   };
-  const base = `${prefixMap[level] || "satker"}.${slugifyAccount(name) || "baru"}`;
+  const base = `${prefixMap[level] || "SATKER"}_${normalizeAccountUsernamePart(name) || "baru"}`;
   let username = base;
   let suffix = 2;
-  while (satkerAccounts.some((account) => account.username === username) || ["admin", "operator"].includes(username)) {
-    username = `${base}.${suffix}`;
+  while (
+    satkerAccounts.some((account) => account.username.toLowerCase() === username.toLowerCase()) ||
+    ["admin", "operator"].includes(username.toLowerCase())
+  ) {
+    username = `${base}_${suffix}`;
     suffix += 1;
   }
   return username;
@@ -842,7 +867,7 @@ function renderSatkerAccounts() {
   if (!rows) return;
 
   if (!satkerAccounts.length) {
-    rows.innerHTML = "<tr><td colspan=\"7\">Belum ada akun satker. Input nama satker untuk membuat akun login otomatis.</td></tr>";
+    rows.innerHTML = "<tr><td colspan=\"7\">Belum ada akun satker. Input nama Bidang/Badan/Kota/Provinsi/Kabupaten/Kota untuk membuat akun login otomatis.</td></tr>";
     return;
   }
 
@@ -2644,18 +2669,166 @@ function deleteAkipWorksheet() {
     '<tr><td colspan="10">Unggah workbook Lembar Kerja Evaluasi (LKE) AKIP untuk mulai menilai.</td></tr>';
 }
 
-function renderDocuments() {
-  const documentGrid = document.querySelector("#documentGrid");
-  documentGrid.innerHTML = documents
-    .map(
-      ([title, meta]) => `
-        <article class="document-card">
-          <strong>${title}</strong>
-          <span>${meta}</span>
+function getDocumentIcon() {
+  return `
+    <svg aria-hidden="true" viewBox="0 0 24 24">
+      <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z"></path>
+      <path d="M14 2v5h5"></path>
+      <path d="M9 13h6"></path>
+      <path d="M9 17h4"></path>
+    </svg>
+  `;
+}
+
+function getFileKind(fileName) {
+  const extension = String(fileName || "").split(".").pop().toLowerCase();
+  if (["xls", "xlsx", "csv"].includes(extension)) return { label: "XLS", className: "sheet" };
+  if (["doc", "docx"].includes(extension)) return { label: "DOC", className: "doc" };
+  if (["zip", "rar"].includes(extension)) return { label: "ZIP", className: "archive" };
+  return { label: extension === "pdf" ? "PDF" : "FILE", className: "pdf" };
+}
+
+function formatFileSize(size) {
+  if (!size) return "0 KB";
+  const units = ["B", "KB", "MB", "GB"];
+  const index = Math.min(Math.floor(Math.log(size) / Math.log(1024)), units.length - 1);
+  return `${(size / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`;
+}
+
+function renderSelectedFiles() {
+  const filesPanel = document.querySelector("#selectedFilesPanel");
+  const fileList = document.querySelector("#selectedFileList");
+  const summary = document.querySelector("#selectedFileSummary");
+  const count = document.querySelector("#uploadFileCount");
+  const status = document.querySelector("#uploadOverallStatus");
+  const submitButton = document.querySelector("#submitAkipUpload");
+  if (!filesPanel || !fileList || !summary || !count || !status || !submitButton) return;
+
+  const hasFiles = selectedAkipFiles.length > 0;
+  filesPanel.hidden = !hasFiles;
+  count.textContent = String(selectedAkipFiles.length);
+  const missingTypeCount = selectedAkipFiles.filter((item) => !item.documentType).length;
+  status.textContent = hasFiles ? (missingTypeCount ? "Pilih jenis dokumen" : "Menunggu unggah") : "Siap";
+  submitButton.disabled = !hasFiles || missingTypeCount > 0;
+
+  if (!hasFiles) {
+    fileList.innerHTML = "";
+    summary.textContent = "Pilih jenis dokumen untuk setiap file sesuai urutan unggah.";
+    return;
+  }
+
+  const totalSize = selectedAkipFiles.reduce((total, item) => total + item.file.size, 0);
+  summary.textContent = missingTypeCount
+    ? `${selectedAkipFiles.length} file dipilih - ${missingTypeCount} belum memilih jenis dokumen`
+    : `${selectedAkipFiles.length} file dipilih - ${formatFileSize(totalSize)} - siap diunggah`;
+  fileList.innerHTML = selectedAkipFiles
+    .map(({ id, file, documentType, progress, status: fileStatus }, index) => {
+      const kind = getFileKind(file.name);
+      const statusClass = fileStatus === "Selesai" ? "done" : fileStatus === "Gagal" ? "error" : "";
+      const options = [
+        '<option value="">Pilih jenis dokumen</option>',
+        ...akipDocumentTypes.map(
+          (type) => `<option value="${escapeHtml(type)}"${type === documentType ? " selected" : ""}>${escapeHtml(type)}</option>`
+        ),
+      ].join("");
+      return `
+        <article class="selected-file" data-file-id="${escapeHtml(id)}">
+          <span class="file-type-icon ${escapeHtml(kind.className)}">${getDocumentIcon()}</span>
+          <div class="selected-file-body">
+            <div class="selected-file-title">
+              <strong title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</strong>
+              <span>${escapeHtml(formatFileSize(file.size))}</span>
+            </div>
+            <label class="file-type-select">
+              Jenis dokumen urutan ${index + 1}
+              <select data-akip-file-type="${escapeHtml(id)}">
+                ${options}
+              </select>
+            </label>
+            <div class="file-progress"><span style="--progress: ${progress}%"></span></div>
+            <span class="file-status ${statusClass}">${escapeHtml(fileStatus)}</span>
+          </div>
+          <button class="file-remove" data-remove-akip-file="${escapeHtml(id)}" type="button" aria-label="Hapus ${escapeHtml(file.name)}">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
         </article>
-      `
-    )
+      `;
+    })
     .join("");
+}
+
+function showToast(title, message, type = "success") {
+  const stack = document.querySelector("#toastStack");
+  if (!stack) return;
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<strong>${escapeHtml(title)}</strong><span>${escapeHtml(message)}</span>`;
+  stack.append(toast);
+  window.setTimeout(() => toast.remove(), 3600);
+}
+
+function addAkipFiles(files) {
+  const incomingFiles = Array.from(files || []);
+  const existingKeys = new Set(selectedAkipFiles.map(({ file }) => `${file.name}-${file.size}-${file.lastModified}`));
+  const freshFiles = incomingFiles.filter((file) => !existingKeys.has(`${file.name}-${file.size}-${file.lastModified}`));
+
+  selectedAkipFiles = selectedAkipFiles.concat(
+    freshFiles.map((file) => ({
+      id: crypto.randomUUID(),
+      file,
+      progress: 0,
+      status: "Pilih jenis dokumen",
+      documentType: "",
+    }))
+  );
+
+  renderSelectedFiles();
+  if (freshFiles.length) showToast("File ditambahkan", `${freshFiles.length} file ditambahkan. Pilih jenis dokumen sesuai urutan file.`);
+}
+
+function resetAkipUpload() {
+  if (uploadProgressTimer) window.clearInterval(uploadProgressTimer);
+  uploadProgressTimer = null;
+  selectedAkipFiles = [];
+  document.querySelector("#akipDocumentInput").value = "";
+  renderSelectedFiles();
+}
+
+function simulateAkipUpload() {
+  if (!selectedAkipFiles.length) {
+    showToast("Belum ada file", "Pilih minimal satu file sebelum mengunggah.", "error");
+    return;
+  }
+
+  const firstMissingIndex = selectedAkipFiles.findIndex((item) => !item.documentType);
+  if (firstMissingIndex !== -1) {
+    showToast("Jenis dokumen belum lengkap", `Pilih jenis dokumen untuk file urutan ${firstMissingIndex + 1}.`, "error");
+    return;
+  }
+
+  document.querySelector("#uploadOverallStatus").textContent = "Mengunggah...";
+  selectedAkipFiles = selectedAkipFiles.map((item) => ({ ...item, status: "Mengunggah...", progress: Math.max(item.progress, 8) }));
+  renderSelectedFiles();
+
+  if (uploadProgressTimer) window.clearInterval(uploadProgressTimer);
+  uploadProgressTimer = window.setInterval(() => {
+    selectedAkipFiles = selectedAkipFiles.map((item) => {
+      if (item.progress >= 100) return { ...item, status: "Selesai" };
+      const nextProgress = Math.min(100, item.progress + 18 + Math.round(Math.random() * 16));
+      return { ...item, progress: nextProgress, status: nextProgress >= 100 ? "Selesai" : "Mengunggah..." };
+    });
+    renderSelectedFiles();
+
+    if (selectedAkipFiles.every((item) => item.progress >= 100)) {
+      window.clearInterval(uploadProgressTimer);
+      uploadProgressTimer = null;
+      document.querySelector("#uploadOverallStatus").textContent = "Selesai";
+      showToast("Unggah selesai", `${selectedAkipFiles.length} file berhasil diproses sesuai jenis dokumen masing-masing.`);
+    }
+  }, 360);
 }
 
 function renderReviews() {
@@ -2698,7 +2871,9 @@ document.querySelector("#loginForm").addEventListener("submit", async (event) =>
 
   try {
     if (!isBackendAvailable()) {
-      const localSatker = satkerAccounts.find((account) => account.username === username && account.password === password);
+      const localSatker = satkerAccounts.find(
+        (account) => account.username.toLowerCase() === username.toLowerCase() && account.password === password
+      );
       if (!(username === "admin" && password === "admin123") && !localSatker) {
         throw new Error("Username atau password salah.");
       }
@@ -3339,6 +3514,46 @@ document.querySelector("#resetAgreements").addEventListener("click", () => {
 
 document.querySelector("#cancelAgreementEdit").addEventListener("click", resetAgreementForm);
 
+document.querySelector("#akipDocumentInput").addEventListener("change", (event) => {
+  addAkipFiles(event.target.files);
+  event.target.value = "";
+});
+
+document.querySelector("#akipDropzone").addEventListener("dragover", (event) => {
+  event.preventDefault();
+  event.currentTarget.classList.add("dragging");
+});
+
+document.querySelector("#akipDropzone").addEventListener("dragleave", (event) => {
+  event.currentTarget.classList.remove("dragging");
+});
+
+document.querySelector("#akipDropzone").addEventListener("drop", (event) => {
+  event.preventDefault();
+  event.currentTarget.classList.remove("dragging");
+  addAkipFiles(event.dataTransfer.files);
+});
+
+document.querySelector("#selectedFileList").addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-remove-akip-file]");
+  if (!removeButton) return;
+  selectedAkipFiles = selectedAkipFiles.filter((item) => item.id !== removeButton.dataset.removeAkipFile);
+  renderSelectedFiles();
+});
+
+document.querySelector("#selectedFileList").addEventListener("change", (event) => {
+  const select = event.target.closest("[data-akip-file-type]");
+  if (!select) return;
+  selectedAkipFiles = selectedAkipFiles.map((item) =>
+    item.id === select.dataset.akipFileType ? { ...item, documentType: select.value, status: select.value ? "Siap diunggah" : "Pilih jenis dokumen" } : item
+  );
+  renderSelectedFiles();
+});
+
+document.querySelector("#clearAkipFiles").addEventListener("click", resetAkipUpload);
+document.querySelector("#cancelAkipUpload").addEventListener("click", resetAkipUpload);
+document.querySelector("#submitAkipUpload").addEventListener("click", simulateAkipUpload);
+
 populateCascadeSelects();
 populateAgreementCascadeSelect();
 populateAgreementIndicatorSelect();
@@ -3355,7 +3570,7 @@ renderRealizations();
 renderGoals();
 renderAgreementPreview();
 renderAgreements();
-renderDocuments();
+renderSelectedFiles();
 renderReviews();
 renderSatkerAccounts();
 initializeAuth();

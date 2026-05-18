@@ -80,22 +80,36 @@ function slugify(value) {
     .slice(0, 42);
 }
 
+function normalizeUsernamePart(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[^\w\s/-]/g, "")
+    .trim()
+    .replace(/[\s/-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 42);
+}
+
 function generatePassword() {
   return `Skp-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 }
 
 function generateSatkerUsername(level, name) {
   const prefixMap = {
-    "Kejaksaan Agung": "kejakgung",
-    "Kejaksaan Tinggi": "kejati",
-    "Kejaksaan Negeri": "kejari",
-    "Cabang Kejaksaan Negeri": "cabjari",
+    "Kejaksaan Agung": "KA",
+    "Kejaksaan Tinggi": "KT",
+    "Kejaksaan Negeri": "KN",
+    "Cabang Kejaksaan Negeri": "CKN",
   };
-  const base = `${prefixMap[level] || "satker"}.${slugify(name) || "baru"}`;
+  const base = `${prefixMap[level] || "SATKER"}_${normalizeUsernamePart(name) || "baru"}`;
   let username = base;
   let suffix = 2;
-  while (store.satkerAccounts.some((account) => account.username === username) || users.some((user) => user.username === username)) {
-    username = `${base}.${suffix}`;
+  while (
+    store.satkerAccounts.some((account) => account.username.toLowerCase() === username.toLowerCase()) ||
+    users.some((user) => user.username.toLowerCase() === username.toLowerCase())
+  ) {
+    username = `${base}_${suffix}`;
     suffix += 1;
   }
   return username;
@@ -253,7 +267,7 @@ async function handleApi(request, response, url) {
     const username = String(body.username || "").trim().toLowerCase();
     const password = String(body.password || "");
     const baseUser = users.find((item) => item.username === username && item.password === password);
-    const satkerUser = store.satkerAccounts.find((item) => item.username === username && item.password === password);
+    const satkerUser = store.satkerAccounts.find((item) => item.username.toLowerCase() === username && item.password === password);
     const user = baseUser || satkerUser;
 
     if (!user) {
@@ -344,7 +358,7 @@ async function handleApi(request, response, url) {
     const region = String(body.region || "").trim();
 
     if (!level || !name) {
-      sendError(response, 400, "Tingkat dan nama satker wajib diisi.");
+      sendError(response, 400, "Tingkat dan nama Bidang/Badan/Kota/Provinsi/Kabupaten/Kota wajib diisi.");
       return;
     }
 
