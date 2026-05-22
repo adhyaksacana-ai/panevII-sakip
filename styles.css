@@ -457,6 +457,123 @@ textarea:focus {
   gap: 14px;
 }
 
+.monev-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.monev-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.monev-section {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+}
+
+.monev-table-wrap {
+  border-radius: var(--radius);
+}
+
+.monev-table {
+  min-width: 860px;
+}
+
+.monev-table small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.monev-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.monev-status.done {
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+}
+
+.monev-status.missing,
+.monev-status.warning {
+  background: var(--gold-soft);
+  color: #81550c;
+}
+
+.monev-status.danger {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.muted-cell {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.monev-view-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.monev-eye-button {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--primary-dark);
+}
+
+.monev-eye-button svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.monev-document-modal {
+  display: grid;
+  gap: 16px;
+}
+
+.monev-quarter-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.monev-detail-table {
+  min-width: 980px;
+}
+
+.monev-file-links {
+  display: grid;
+  gap: 6px;
+}
+
+.monev-file-links a {
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .goal-row {
   display: grid;
   gap: 8px;
@@ -1494,6 +1611,12 @@ label {
   font-weight: 800;
 }
 
+.file-meta-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(150px, 0.8fr);
+  gap: 10px;
+}
+
 .file-type-select select {
   margin-top: 6px;
 }
@@ -1665,6 +1788,10 @@ dialog {
   box-shadow: var(--shadow);
 }
 
+#monevDocumentDialog {
+  width: min(1120px, calc(100vw - 32px));
+}
+
 dialog::backdrop {
   background: rgba(16, 24, 40, 0.42);
 }
@@ -1742,6 +1869,8 @@ dialog::backdrop {
   }
 
   .metric-grid,
+  .monev-summary-grid,
+  .monev-quarter-summary,
   .two-column,
   .upload-layout,
   .cascade-form,
@@ -1787,6 +1916,8 @@ dialog::backdrop {
   }
 
   .metric-grid,
+  .monev-summary-grid,
+  .monev-quarter-summary,
   .two-column,
   .upload-layout,
   .cascade-form,
@@ -1808,6 +1939,7 @@ dialog::backdrop {
 
   .indicator-row,
   .sasaran-row,
+  .file-meta-grid,
   .renstra-indicator-row {
     grid-template-columns: 1fr;
   }

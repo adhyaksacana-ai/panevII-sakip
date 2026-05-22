@@ -699,12 +699,105 @@
         </section>
 
         <section class="content-page" id="evaluasi">
-          <section class="panel">
+          <section class="panel monev-panel">
             <div class="panel-header">
-              <h2>Monitoring dan Evaluasi</h2>
-              <button class="primary-button small" type="button">Buat Catatan</button>
+              <div>
+                <h2>Monitoring dan Evaluasi</h2>
+                <p class="panel-copy">Pantau kepatuhan dokumen AKIP, rencana aksi, dan realisasi anggaran satuan kerja.</p>
+              </div>
+              <span class="badge">Terhubung Dokumen AKIP</span>
             </div>
-            <div class="review-list" id="reviewList"></div>
+
+            <div class="monev-summary-grid">
+              <article class="metric">
+                <span>Kepatuhan Dokumen</span>
+                <strong id="monevDocumentCompliance">0%</strong>
+                <small id="monevDocumentSummary">Belum ada dokumen diunggah</small>
+              </article>
+              <article class="metric">
+                <span>Monev Rencana Aksi</span>
+                <strong id="monevActionCount">0</strong>
+                <small>Rencana aksi berbasis dokumen dan realisasi kinerja</small>
+              </article>
+              <article class="metric">
+                <span>Realisasi Anggaran</span>
+                <strong id="monevBudgetTotal">Rp0</strong>
+                <small id="monevBudgetSummary">Belum ada realisasi anggaran</small>
+              </article>
+            </div>
+
+            <section class="monev-section" aria-labelledby="documentComplianceTitle">
+              <div class="section-heading">
+                <div>
+                  <strong id="documentComplianceTitle">1. Kepatuhan Penyampaian Dokumen AKIP</strong>
+                  <span>Memantau dokumen per kategori, melihat kelengkapan upload, dan membuka rincian per triwulan.</span>
+                </div>
+              </div>
+              <div class="table-wrap monev-table-wrap">
+                <table class="monev-table">
+                  <thead>
+                    <tr>
+                      <th>Kategori Dokumen</th>
+                      <th>Jenis Dokumen</th>
+                      <th>Triwulan I</th>
+                      <th>Triwulan II</th>
+                      <th>Triwulan III</th>
+                      <th>Triwulan IV</th>
+                      <th>Status</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monevDocumentRows"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="monev-section" aria-labelledby="actionMonitoringTitle">
+              <div class="section-heading">
+                <div>
+                  <strong id="actionMonitoringTitle">2. Monev Rencana Aksi</strong>
+                  <span>Ringkasan pelaksanaan rencana aksi berdasarkan dokumen Rencana Aksi dan input realisasi kinerja.</span>
+                </div>
+              </div>
+              <div class="table-wrap monev-table-wrap">
+                <table class="monev-table">
+                  <thead>
+                    <tr>
+                      <th>Triwulan</th>
+                      <th>Sasaran/Indikator</th>
+                      <th>Target</th>
+                      <th>Capaian</th>
+                      <th>Status</th>
+                      <th>Catatan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monevActionRows"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <section class="monev-section" aria-labelledby="budgetRealizationTitle">
+              <div class="section-heading">
+                <div>
+                  <strong id="budgetRealizationTitle">3. Realisasi Anggaran</strong>
+                  <span>Rekap anggaran yang telah diinput pada menu Realisasi Kinerja.</span>
+                </div>
+              </div>
+              <div class="table-wrap monev-table-wrap">
+                <table class="monev-table">
+                  <thead>
+                    <tr>
+                      <th>Triwulan</th>
+                      <th>Kegiatan/Indikator</th>
+                      <th>Realisasi Anggaran</th>
+                      <th>Capaian Kinerja</th>
+                      <th>Keterangan</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monevBudgetRows"></tbody>
+                </table>
+              </div>
+            </section>
           </section>
         </section>
 
@@ -790,6 +883,34 @@
           <textarea rows="3">Capaian berjalan sesuai target, eviden menunggu verifikasi.</textarea>
         </label>
         <button class="primary-button" value="default" type="submit">Simpan</button>
+      </form>
+    </dialog>
+
+    <dialog id="monevDocumentDialog">
+      <form method="dialog" class="modal monev-document-modal">
+        <div class="panel-header">
+          <div>
+            <h2 id="monevDocumentDialogTitle">Rincian Dokumen</h2>
+            <p class="panel-copy" id="monevDocumentDialogCopy">Jumlah dokumen yang diunggah per triwulan.</p>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="Tutup" type="submit">x</button>
+        </div>
+        <div class="monev-quarter-summary" id="monevDocumentQuarterSummary"></div>
+        <div class="table-wrap monev-table-wrap">
+          <table class="monev-table monev-detail-table">
+            <thead>
+              <tr>
+                <th>Jenis Dokumen</th>
+                <th>Triwulan I</th>
+                <th>Triwulan II</th>
+                <th>Triwulan III</th>
+                <th>Triwulan IV</th>
+                <th>Keterangan</th>
+              </tr>
+            </thead>
+            <tbody id="monevDocumentDetailRows"></tbody>
+          </table>
+        </div>
       </form>
     </dialog>
 

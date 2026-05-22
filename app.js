@@ -229,7 +229,37 @@ const akipDocumentTypes = [
   "Pedoman Teknis Evaluasi Internal",
 ];
 
+const akipQuarters = ["Triwulan I", "Triwulan II", "Triwulan III", "Triwulan IV"];
+
+const akipDocumentCategories = [
+  {
+    name: "Perencanaan Kinerja",
+    types: ["Renstra", "IKU", "Renja/RKT", "Perjanjian Kinerja", "Rencana Aksi", "Pohon Kinerja & Cascading"],
+  },
+  {
+    name: "Pengukuran Kinerja",
+    types: ["DPA", "Laporan Monev Renaksi"],
+  },
+  {
+    name: "Pelaporan Kinerja",
+    types: ["Laporan Kinerja"],
+  },
+  {
+    name: "Evaluasi dan Tindak Lanjut",
+    types: ["LHE AKIP Internal", "TL LHE AKIP Internal"],
+  },
+  {
+    name: "Pedoman Teknis",
+    types: [
+      "Pedoman Teknis Perencanaan",
+      "Pedoman Teknis Pengukuran & Pengumpulan Data Kinerja",
+      "Pedoman Teknis Evaluasi Internal",
+    ],
+  },
+];
+
 let selectedAkipFiles = [];
+let uploadedAkipDocuments = [];
 let uploadProgressTimer = null;
 
 const reviews = [
@@ -1491,6 +1521,7 @@ function renderRealizations() {
         <td colspan="9">Belum ada realisasi dari Perjanjian Kinerja yang sudah ditandatangani.</td>
       </tr>
     `;
+    renderMonevMonitoring();
     return;
   }
 
@@ -1520,6 +1551,7 @@ function renderRealizations() {
       `;
     })
     .join("");
+  renderMonevMonitoring();
 }
 
 function normalizeKey(value) {
@@ -2695,6 +2727,67 @@ function formatFileSize(size) {
   return `${(size / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`;
 }
 
+function formatDateTime(value) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function getUploadedDocumentsByType(type) {
+  return uploadedAkipDocuments.filter((document) => document.documentType === type);
+}
+
+function getQuarterIndex(quarter) {
+  const index = akipQuarters.indexOf(quarter);
+  return index === -1 ? akipQuarters.length : index;
+}
+
+function getSortedUploadedDocuments() {
+  return [...uploadedAkipDocuments].sort((first, second) => {
+    const quarterDiff = getQuarterIndex(first.quarter) - getQuarterIndex(second.quarter);
+    if (quarterDiff) return quarterDiff;
+    return new Date(second.uploadedAt) - new Date(first.uploadedAt);
+  });
+}
+
+function getDocumentsForCategory(category) {
+  return uploadedAkipDocuments.filter((document) => category.types.includes(document.documentType));
+}
+
+function getDocumentsForTypeAndQuarter(type, quarter) {
+  return uploadedAkipDocuments.filter((document) => document.documentType === type && document.quarter === quarter);
+}
+
+function countDocumentsByQuarter(documents) {
+  return akipQuarters.map((quarter) => documents.filter((document) => document.quarter === quarter).length);
+}
+
+function renderQuarterCountCells(counts) {
+  return counts.map((count) => `<td><strong>${count}</strong></td>`).join("");
+}
+
+function renderDocumentLinks(documents) {
+  if (!documents.length) return '<span class="muted-cell">Belum upload</span>';
+  return `
+    <div class="monev-file-links">
+      <strong>${documents.length} file</strong>
+      ${documents
+        .map(
+          (document, index) => `
+            <a href="${escapeHtml(document.url)}" target="_blank" rel="noopener">
+              Lihat ${index + 1}
+            </a>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function renderSelectedFiles() {
   const filesPanel = document.querySelector("#selectedFilesPanel");
   const fileList = document.querySelector("#selectedFileList");
@@ -2707,29 +2800,33 @@ function renderSelectedFiles() {
   const hasFiles = selectedAkipFiles.length > 0;
   filesPanel.hidden = !hasFiles;
   count.textContent = String(selectedAkipFiles.length);
-  const missingTypeCount = selectedAkipFiles.filter((item) => !item.documentType).length;
-  status.textContent = hasFiles ? (missingTypeCount ? "Pilih jenis dokumen" : "Menunggu unggah") : "Siap";
-  submitButton.disabled = !hasFiles || missingTypeCount > 0;
+  const missingMetaCount = selectedAkipFiles.filter((item) => !item.documentType || !item.quarter).length;
+  status.textContent = hasFiles ? (missingMetaCount ? "Lengkapi dokumen" : "Menunggu unggah") : "Siap";
+  submitButton.disabled = !hasFiles || missingMetaCount > 0;
 
   if (!hasFiles) {
     fileList.innerHTML = "";
-    summary.textContent = "Pilih jenis dokumen untuk setiap file sesuai urutan unggah.";
+    summary.textContent = "Pilih jenis dokumen dan triwulan untuk setiap file sesuai urutan unggah.";
     return;
   }
 
   const totalSize = selectedAkipFiles.reduce((total, item) => total + item.file.size, 0);
-  summary.textContent = missingTypeCount
-    ? `${selectedAkipFiles.length} file dipilih - ${missingTypeCount} belum memilih jenis dokumen`
+  summary.textContent = missingMetaCount
+    ? `${selectedAkipFiles.length} file dipilih - ${missingMetaCount} belum lengkap jenis dokumen atau triwulan`
     : `${selectedAkipFiles.length} file dipilih - ${formatFileSize(totalSize)} - siap diunggah`;
   fileList.innerHTML = selectedAkipFiles
-    .map(({ id, file, documentType, progress, status: fileStatus }, index) => {
+    .map(({ id, file, documentType, quarter, progress, status: fileStatus }, index) => {
       const kind = getFileKind(file.name);
       const statusClass = fileStatus === "Selesai" ? "done" : fileStatus === "Gagal" ? "error" : "";
-      const options = [
+      const typeOptions = [
         '<option value="">Pilih jenis dokumen</option>',
         ...akipDocumentTypes.map(
           (type) => `<option value="${escapeHtml(type)}"${type === documentType ? " selected" : ""}>${escapeHtml(type)}</option>`
         ),
+      ].join("");
+      const quarterOptions = [
+        '<option value="">Pilih triwulan</option>',
+        ...akipQuarters.map((item) => `<option value="${escapeHtml(item)}"${item === quarter ? " selected" : ""}>${escapeHtml(item)}</option>`),
       ].join("");
       return `
         <article class="selected-file" data-file-id="${escapeHtml(id)}">
@@ -2739,12 +2836,20 @@ function renderSelectedFiles() {
               <strong title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</strong>
               <span>${escapeHtml(formatFileSize(file.size))}</span>
             </div>
-            <label class="file-type-select">
-              Jenis dokumen urutan ${index + 1}
-              <select data-akip-file-type="${escapeHtml(id)}">
-                ${options}
-              </select>
-            </label>
+            <div class="file-meta-grid">
+              <label class="file-type-select">
+                Jenis dokumen urutan ${index + 1}
+                <select data-akip-file-type="${escapeHtml(id)}">
+                  ${typeOptions}
+                </select>
+              </label>
+              <label class="file-type-select">
+                Triwulan
+                <select data-akip-file-quarter="${escapeHtml(id)}">
+                  ${quarterOptions}
+                </select>
+              </label>
+            </div>
             <div class="file-progress"><span style="--progress: ${progress}%"></span></div>
             <span class="file-status ${statusClass}">${escapeHtml(fileStatus)}</span>
           </div>
@@ -2782,11 +2887,12 @@ function addAkipFiles(files) {
       progress: 0,
       status: "Pilih jenis dokumen",
       documentType: "",
+      quarter: "",
     }))
   );
 
   renderSelectedFiles();
-  if (freshFiles.length) showToast("File ditambahkan", `${freshFiles.length} file ditambahkan. Pilih jenis dokumen sesuai urutan file.`);
+  if (freshFiles.length) showToast("File ditambahkan", `${freshFiles.length} file ditambahkan. Pilih jenis dokumen dan triwulan.`);
 }
 
 function resetAkipUpload() {
@@ -2803,9 +2909,9 @@ function simulateAkipUpload() {
     return;
   }
 
-  const firstMissingIndex = selectedAkipFiles.findIndex((item) => !item.documentType);
+  const firstMissingIndex = selectedAkipFiles.findIndex((item) => !item.documentType || !item.quarter);
   if (firstMissingIndex !== -1) {
-    showToast("Jenis dokumen belum lengkap", `Pilih jenis dokumen untuk file urutan ${firstMissingIndex + 1}.`, "error");
+    showToast("Data dokumen belum lengkap", `Pilih jenis dokumen dan triwulan untuk file urutan ${firstMissingIndex + 1}.`, "error");
     return;
   }
 
@@ -2826,23 +2932,201 @@ function simulateAkipUpload() {
       window.clearInterval(uploadProgressTimer);
       uploadProgressTimer = null;
       document.querySelector("#uploadOverallStatus").textContent = "Selesai";
+      const uploadedAt = new Date().toISOString();
+      uploadedAkipDocuments = uploadedAkipDocuments.concat(
+        selectedAkipFiles.map((item) => ({
+          id: item.id,
+          documentType: item.documentType,
+          quarter: item.quarter,
+          name: item.file.name,
+          size: item.file.size,
+          url: URL.createObjectURL(item.file),
+          uploadedAt,
+        }))
+      );
+      renderMonevMonitoring();
       showToast("Unggah selesai", `${selectedAkipFiles.length} file berhasil diproses sesuai jenis dokumen masing-masing.`);
     }
   }, 360);
 }
 
-function renderReviews() {
-  const reviewList = document.querySelector("#reviewList");
-  reviewList.innerHTML = reviews
+function getMonevRealizationEntries() {
+  return realizations
+    .map((item, index) => ({ item, index, agreement: agreements[item.agreementIndex] }))
+    .filter(({ agreement }) => agreement?.status === "Ditandatangani");
+}
+
+function getActionStatus(percent) {
+  if (percent >= 85) return { label: "Tercapai", className: "done" };
+  if (percent >= 60) return { label: "Perlu percepatan", className: "warning" };
+  return { label: "Berisiko", className: "danger" };
+}
+
+function renderMonevDocuments() {
+  const rows = document.querySelector("#monevDocumentRows");
+  if (!rows) return;
+
+  const uploadedTypeCount = akipDocumentTypes.filter((type) => getUploadedDocumentsByType(type).length).length;
+  const compliance = Math.round((uploadedTypeCount / akipDocumentTypes.length) * 100);
+  const sortedDocuments = getSortedUploadedDocuments();
+  document.querySelector("#monevDocumentCompliance").textContent = `${compliance}%`;
+  document.querySelector("#monevDocumentSummary").textContent = `${uploadedTypeCount} dari ${akipDocumentTypes.length} jenis dokumen terpenuhi, ${sortedDocuments.length} file terunggah`;
+
+  rows.innerHTML = akipDocumentCategories
+    .map((category, index) => {
+      const documents = getDocumentsForCategory(category);
+      const counts = countDocumentsByQuarter(documents);
+      const uploadedTypes = category.types.filter((type) => getUploadedDocumentsByType(type).length).length;
+      const isComplete = uploadedTypes === category.types.length;
+      return `
+        <tr>
+          <td><strong>${escapeHtml(category.name)}</strong></td>
+          <td>${uploadedTypes}/${category.types.length} jenis<br><small>${documents.length} file terunggah</small></td>
+          ${renderQuarterCountCells(counts)}
+          <td>
+            <span class="monev-status ${isComplete ? "done" : documents.length ? "warning" : "missing"}">
+              ${isComplete ? "Lengkap" : documents.length ? "Sebagian" : "Belum upload"}
+            </span>
+          </td>
+          <td>
+            <button class="icon-button monev-eye-button" data-view-monev-category="${index}" type="button" aria-label="Lihat rincian ${escapeHtml(category.name)}">
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path>
+                <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderMonevDocumentDialog(category) {
+  const dialog = document.querySelector("#monevDocumentDialog");
+  const title = document.querySelector("#monevDocumentDialogTitle");
+  const copy = document.querySelector("#monevDocumentDialogCopy");
+  const summary = document.querySelector("#monevDocumentQuarterSummary");
+  const rows = document.querySelector("#monevDocumentDetailRows");
+  if (!dialog || !title || !copy || !summary || !rows) return;
+
+  const documents = getDocumentsForCategory(category);
+  const counts = countDocumentsByQuarter(documents);
+  title.textContent = category.name;
+  copy.textContent = `${documents.length} file terunggah dari ${category.types.length} jenis dokumen.`;
+  summary.innerHTML = akipQuarters
     .map(
-      ([title, copy]) => `
-        <article class="review-item">
-          <strong>${title}</strong>
-          <p>${copy}</p>
+      (quarter, index) => `
+        <article class="metric">
+          <span>${escapeHtml(quarter)}</span>
+          <strong>${counts[index]}</strong>
+          <small>dokumen terunggah</small>
         </article>
       `
     )
     .join("");
+
+  rows.innerHTML = category.types
+    .map((type) => {
+      const uploadedCount = getUploadedDocumentsByType(type).length;
+      return `
+        <tr>
+          <td><strong>${escapeHtml(type)}</strong></td>
+          ${akipQuarters.map((quarter) => `<td>${renderDocumentLinks(getDocumentsForTypeAndQuarter(type, quarter))}</td>`).join("")}
+          <td>
+            <span class="monev-status ${uploadedCount ? "done" : "missing"}">
+              ${uploadedCount ? "Sudah upload" : "Belum upload"}
+            </span>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  dialog.showModal();
+}
+
+function renderMonevActions() {
+  const rows = document.querySelector("#monevActionRows");
+  if (!rows) return;
+
+  const entries = getMonevRealizationEntries();
+  const actionDocumentCount = getUploadedDocumentsByType("Rencana Aksi").length;
+  document.querySelector("#monevActionCount").textContent = String(entries.length || actionDocumentCount);
+
+  if (!entries.length) {
+    rows.innerHTML = `
+      <tr>
+        <td colspan="6">Belum ada realisasi kinerja untuk dipantau. Unggah Rencana Aksi dan input realisasi kinerja terlebih dahulu.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  rows.innerHTML = entries
+    .map(({ item, agreement }) => {
+      const plan = getAgreementPlan(agreement);
+      const indicator = getAgreementIndicator(agreement);
+      const target = agreement.target || indicator.target;
+      const percent = calculateAchievementPercent(item.achievement, target);
+      const status = getActionStatus(percent);
+      return `
+        <tr>
+          <td>${escapeHtml(item.quarter)}</td>
+          <td>
+            <strong>${escapeHtml(getSasaranByLevel(plan, agreement.indicatorLevel))}</strong>
+            <small>${escapeHtml(indicator.name)}</small>
+          </td>
+          <td>${escapeHtml(target)}</td>
+          <td><strong>${escapeHtml(item.achievement)}</strong> <small>(${percent}%)</small></td>
+          <td><span class="monev-status ${status.className}">${status.label}</span></td>
+          <td>${escapeHtml(item.note || "-")}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderMonevBudget() {
+  const rows = document.querySelector("#monevBudgetRows");
+  if (!rows) return;
+
+  const entries = getMonevRealizationEntries();
+  const totalBudget = entries.reduce((total, { item }) => total + Number(item.budget || 0), 0);
+  document.querySelector("#monevBudgetTotal").textContent = currency(totalBudget);
+  document.querySelector("#monevBudgetSummary").textContent = entries.length
+    ? `${entries.length} realisasi sudah tercatat`
+    : "Belum ada realisasi anggaran";
+
+  if (!entries.length) {
+    rows.innerHTML = `
+      <tr>
+        <td colspan="5">Belum ada data anggaran dari menu Realisasi Kinerja.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  rows.innerHTML = entries
+    .map(({ item, agreement }) => {
+      const indicator = getAgreementIndicator(agreement);
+      return `
+        <tr>
+          <td>${escapeHtml(item.quarter)}</td>
+          <td>${escapeHtml(indicator.name)}</td>
+          <td><strong>${currency(item.budget)}</strong></td>
+          <td>${escapeHtml(item.achievement)}</td>
+          <td>${escapeHtml(item.note || "-")}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderMonevMonitoring() {
+  renderMonevDocuments();
+  renderMonevActions();
+  renderMonevBudget();
 }
 
 function switchPage(pageId) {
@@ -3157,6 +3441,13 @@ document.querySelector("#akipRows").addEventListener("change", (event) => {
   if (!guideSelect) return;
   akipState.guideSelections[guideSelect.dataset.akipGuide] = guideSelect.value;
   renderAkipEvaluation();
+});
+
+document.querySelector("#monevDocumentRows").addEventListener("click", (event) => {
+  const viewButton = event.target.closest("[data-view-monev-category]");
+  if (!viewButton) return;
+  const category = akipDocumentCategories[Number(viewButton.dataset.viewMonevCategory)];
+  if (category) renderMonevDocumentDialog(category);
 });
 
 document.querySelector("#resetAkipScores").addEventListener("click", () => {
@@ -3542,11 +3833,25 @@ document.querySelector("#selectedFileList").addEventListener("click", (event) =>
 });
 
 document.querySelector("#selectedFileList").addEventListener("change", (event) => {
-  const select = event.target.closest("[data-akip-file-type]");
-  if (!select) return;
-  selectedAkipFiles = selectedAkipFiles.map((item) =>
-    item.id === select.dataset.akipFileType ? { ...item, documentType: select.value, status: select.value ? "Siap diunggah" : "Pilih jenis dokumen" } : item
-  );
+  const typeSelect = event.target.closest("[data-akip-file-type]");
+  const quarterSelect = event.target.closest("[data-akip-file-quarter]");
+  if (!typeSelect && !quarterSelect) return;
+
+  selectedAkipFiles = selectedAkipFiles.map((item) => {
+    const isTypeChange = typeSelect && item.id === typeSelect.dataset.akipFileType;
+    const isQuarterChange = quarterSelect && item.id === quarterSelect.dataset.akipFileQuarter;
+    if (!isTypeChange && !isQuarterChange) return item;
+
+    const nextItem = {
+      ...item,
+      documentType: isTypeChange ? typeSelect.value : item.documentType,
+      quarter: isQuarterChange ? quarterSelect.value : item.quarter,
+    };
+    return {
+      ...nextItem,
+      status: nextItem.documentType && nextItem.quarter ? "Siap diunggah" : "Lengkapi dokumen",
+    };
+  });
   renderSelectedFiles();
 });
 
@@ -3571,6 +3876,6 @@ renderGoals();
 renderAgreementPreview();
 renderAgreements();
 renderSelectedFiles();
-renderReviews();
+renderMonevMonitoring();
 renderSatkerAccounts();
 initializeAuth();
