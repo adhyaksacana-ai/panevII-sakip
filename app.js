@@ -219,6 +219,7 @@ const akipDocumentTypes = [
   "Perjanjian Kinerja",
   "Rencana Aksi",
   "Laporan Kinerja",
+  "Rapat Staf EKA",
   "DPA",
   "Pohon Kinerja & Cascading",
   "LHE AKIP Internal",
@@ -230,6 +231,7 @@ const akipDocumentTypes = [
 ];
 
 const akipQuarters = ["Triwulan I", "Triwulan II", "Triwulan III", "Triwulan IV"];
+const quarterlyAkipDocumentTypes = ["Laporan Kinerja", "Laporan Monev Renaksi", "Rapat Staf EKA"];
 
 const akipDocumentCategories = [
   {
@@ -238,7 +240,7 @@ const akipDocumentCategories = [
   },
   {
     name: "Pengukuran Kinerja",
-    types: ["DPA", "Laporan Monev Renaksi"],
+    types: ["DPA", "Laporan Monev Renaksi", "Rapat Staf EKA"],
   },
   {
     name: "Pelaporan Kinerja",
@@ -2754,6 +2756,10 @@ function getSortedUploadedDocuments() {
   });
 }
 
+function requiresAkipQuarter(documentType) {
+  return quarterlyAkipDocumentTypes.includes(documentType);
+}
+
 function getDocumentsForCategory(category) {
   return uploadedAkipDocuments.filter((document) => category.types.includes(document.documentType));
 }
@@ -2800,24 +2806,25 @@ function renderSelectedFiles() {
   const hasFiles = selectedAkipFiles.length > 0;
   filesPanel.hidden = !hasFiles;
   count.textContent = String(selectedAkipFiles.length);
-  const missingMetaCount = selectedAkipFiles.filter((item) => !item.documentType || !item.quarter).length;
+  const missingMetaCount = selectedAkipFiles.filter((item) => !item.documentType || (requiresAkipQuarter(item.documentType) && !item.quarter)).length;
   status.textContent = hasFiles ? (missingMetaCount ? "Lengkapi dokumen" : "Menunggu unggah") : "Siap";
   submitButton.disabled = !hasFiles || missingMetaCount > 0;
 
   if (!hasFiles) {
     fileList.innerHTML = "";
-    summary.textContent = "Pilih jenis dokumen dan triwulan untuk setiap file sesuai urutan unggah.";
+    summary.textContent = "Pilih jenis dokumen. Triwulan hanya wajib untuk Laporan Kinerja, Laporan Monev Renaksi, dan Rapat Staf EKA.";
     return;
   }
 
   const totalSize = selectedAkipFiles.reduce((total, item) => total + item.file.size, 0);
   summary.textContent = missingMetaCount
-    ? `${selectedAkipFiles.length} file dipilih - ${missingMetaCount} belum lengkap jenis dokumen atau triwulan`
+    ? `${selectedAkipFiles.length} file dipilih - ${missingMetaCount} belum lengkap jenis dokumen atau triwulan wajib`
     : `${selectedAkipFiles.length} file dipilih - ${formatFileSize(totalSize)} - siap diunggah`;
   fileList.innerHTML = selectedAkipFiles
     .map(({ id, file, documentType, quarter, progress, status: fileStatus }, index) => {
       const kind = getFileKind(file.name);
       const statusClass = fileStatus === "Selesai" ? "done" : fileStatus === "Gagal" ? "error" : "";
+      const needsQuarter = requiresAkipQuarter(documentType);
       const typeOptions = [
         '<option value="">Pilih jenis dokumen</option>',
         ...akipDocumentTypes.map(
@@ -2844,8 +2851,8 @@ function renderSelectedFiles() {
                 </select>
               </label>
               <label class="file-type-select">
-                Triwulan
-                <select data-akip-file-quarter="${escapeHtml(id)}">
+                Triwulan${needsQuarter ? " wajib" : " tidak berlaku"}
+                <select data-akip-file-quarter="${escapeHtml(id)}"${needsQuarter ? "" : " disabled"}>
                   ${quarterOptions}
                 </select>
               </label>
@@ -2892,7 +2899,7 @@ function addAkipFiles(files) {
   );
 
   renderSelectedFiles();
-  if (freshFiles.length) showToast("File ditambahkan", `${freshFiles.length} file ditambahkan. Pilih jenis dokumen dan triwulan.`);
+  if (freshFiles.length) showToast("File ditambahkan", `${freshFiles.length} file ditambahkan. Pilih jenis dokumen; triwulan hanya untuk dokumen triwulanan.`);
 }
 
 function resetAkipUpload() {
@@ -2909,9 +2916,9 @@ function simulateAkipUpload() {
     return;
   }
 
-  const firstMissingIndex = selectedAkipFiles.findIndex((item) => !item.documentType || !item.quarter);
+  const firstMissingIndex = selectedAkipFiles.findIndex((item) => !item.documentType || (requiresAkipQuarter(item.documentType) && !item.quarter));
   if (firstMissingIndex !== -1) {
-    showToast("Data dokumen belum lengkap", `Pilih jenis dokumen dan triwulan untuk file urutan ${firstMissingIndex + 1}.`, "error");
+    showToast("Data dokumen belum lengkap", `Lengkapi jenis dokumen dan triwulan wajib untuk file urutan ${firstMissingIndex + 1}.`, "error");
     return;
   }
 
@@ -2937,7 +2944,7 @@ function simulateAkipUpload() {
         selectedAkipFiles.map((item) => ({
           id: item.id,
           documentType: item.documentType,
-          quarter: item.quarter,
+          quarter: requiresAkipQuarter(item.documentType) ? item.quarter : "",
           name: item.file.name,
           size: item.file.size,
           url: URL.createObjectURL(item.file),
@@ -3029,14 +3036,20 @@ function renderMonevDocumentDialog(category) {
   rows.innerHTML = category.types
     .map((type) => {
       const uploadedCount = getUploadedDocumentsByType(type).length;
+      const isQuarterlyDocument = requiresAkipQuarter(type);
       return `
         <tr>
           <td><strong>${escapeHtml(type)}</strong></td>
-          ${akipQuarters.map((quarter) => `<td>${renderDocumentLinks(getDocumentsForTypeAndQuarter(type, quarter))}</td>`).join("")}
+          ${
+            isQuarterlyDocument
+              ? akipQuarters.map((quarter) => `<td>${renderDocumentLinks(getDocumentsForTypeAndQuarter(type, quarter))}</td>`).join("")
+              : akipQuarters.map(() => '<td><span class="muted-cell">Tidak berlaku</span></td>').join("")
+          }
           <td>
             <span class="monev-status ${uploadedCount ? "done" : "missing"}">
               ${uploadedCount ? "Sudah upload" : "Belum upload"}
             </span>
+            ${!isQuarterlyDocument && uploadedCount ? renderDocumentLinks(getUploadedDocumentsByType(type)) : ""}
           </td>
         </tr>
       `;
@@ -3847,9 +3860,10 @@ document.querySelector("#selectedFileList").addEventListener("change", (event) =
       documentType: isTypeChange ? typeSelect.value : item.documentType,
       quarter: isQuarterChange ? quarterSelect.value : item.quarter,
     };
+    if (!requiresAkipQuarter(nextItem.documentType)) nextItem.quarter = "";
     return {
       ...nextItem,
-      status: nextItem.documentType && nextItem.quarter ? "Siap diunggah" : "Lengkapi dokumen",
+      status: nextItem.documentType && (!requiresAkipQuarter(nextItem.documentType) || nextItem.quarter) ? "Siap diunggah" : "Lengkapi dokumen",
     };
   });
   renderSelectedFiles();
