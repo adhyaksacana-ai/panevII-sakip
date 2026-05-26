@@ -47,9 +47,6 @@
           <button class="nav-item" data-page="renstra" type="button">
             <span>Matriks Renstra</span>
           </button>
-          <button class="nav-item" data-page="rencana" type="button">
-            <span>Rencana Kinerja Tahunan</span>
-          </button>
           <button class="nav-item" data-page="iku" type="button">
             <span>IKU</span>
           </button>
@@ -97,12 +94,10 @@
             <h1 id="pageTitle">Dashboard Kinerja</h1>
           </div>
           <div class="top-actions">
-            <select id="unitSelect" aria-label="Pilih unit kerja">
-              <option>Kejaksaan Negeri Bandung</option>
-              <option>Kejaksaan Negeri Bogor</option>
-              <option>Kejaksaan Tinggi Jawa Barat</option>
-            </select>
-            <button class="primary-button" id="openEntry" type="button">Input Realisasi</button>
+            <div class="user-unit-display" aria-label="Satuan kerja akun login">
+              <span>Satuan Kerja</span>
+              <strong id="unitDisplay">Satuan Kerja</strong>
+            </div>
           </div>
         </header>
 
@@ -372,7 +367,7 @@
                 <p class="panel-copy">Sasaran, indikator, dan target tersinkron langsung dari Matriks Renstra.</p>
               </div>
               <div class="tree-actions">
-                <select id="ikuYearSelect" aria-label="Pilih tahun target IKU"></select>
+                <span class="badge" id="ikuCurrentYearBadge">Target Tahun Ini</span>
                 <span class="badge">Sinkron Renstra</span>
               </div>
             </div>
@@ -394,7 +389,7 @@
                     <th>Level</th>
                     <th>Sasaran</th>
                     <th>Indikator</th>
-                    <th>Target Tahun</th>
+                    <th>Target Tahun Sekarang</th>
                     <th>Formulasi Perhitungan</th>
                     <th>Parameter</th>
                   </tr>
@@ -470,7 +465,7 @@
             <div class="panel-header">
               <div>
                 <h2>Input Perjanjian Kinerja</h2>
-                <p class="panel-copy">Buat komitmen kinerja antara atasan dan bawahan berdasarkan sasaran cascading.</p>
+                <p class="panel-copy">Buat komitmen kinerja berdasarkan sasaran, indikator, dan target yang tersinkron dari IKU.</p>
               </div>
               <span class="badge">PK 2026</span>
             </div>
@@ -501,7 +496,7 @@
                 <input name="employeePosition" placeholder="Contoh: Kepala Seksi Pidana Umum" required />
               </label>
               <label class="full-span">
-                Sumber Sasaran Kinerja Tahunan
+                Sumber Sasaran IKU
                 <select name="agreementCascade" id="agreementCascadeSelect" required></select>
               </label>
               <label>
@@ -518,7 +513,7 @@
               </label>
               <label class="full-span">
                 Target Tahunan
-                <input name="agreementTarget" id="agreementTargetInput" placeholder="Target tahunan dapat diedit manual" required />
+                <input name="agreementTarget" id="agreementTargetInput" placeholder="Target otomatis dari IKU" readonly required />
               </label>
               <div class="agreement-preview full-span" id="agreementPreview"></div>
               <div class="form-actions full-span">
@@ -565,6 +560,10 @@
             </div>
             <form class="realization-form" id="realizationForm">
               <label>
+                Satuan Kerja
+                <input id="realizationUnitInput" name="unit" readonly value="Satuan Kerja" />
+              </label>
+              <label>
                 Triwulan
                 <select name="quarter" required>
                   <option>Triwulan I</option>
@@ -589,10 +588,20 @@
                 Indikator Kinerja
                 <select name="indicatorIndex" id="realizationIndicatorSelect" required></select>
               </label>
-              <label>
-                Capaian Indikator
-                <input name="achievement" placeholder="Contoh: 86% atau 24 laporan" required />
-              </label>
+              <section class="formula-realization-panel full-span" aria-labelledby="realizationFormulaTitle">
+                <div class="section-heading">
+                  <div>
+                    <strong id="realizationFormulaTitle">Formulasi Capaian Indikator</strong>
+                    <span id="realizationFormulaDescription">Pilih Perjanjian Kinerja untuk memuat rumus indikator.</span>
+                  </div>
+                  <span class="badge" id="realizationFormulaStatus">Belum dimuat</span>
+                </div>
+                <div class="realization-formula-inputs" id="realizationFormulaInputs"></div>
+                <label class="formula-result-field">
+                  Capaian Indikator
+                  <input name="achievement" id="realizationAchievementInput" readonly placeholder="Hasil rumus otomatis" />
+                </label>
+              </section>
               <label>
                 Realisasi Anggaran
                 <input name="budget" type="number" min="0" placeholder="Contoh: 125000000" required />
@@ -867,24 +876,6 @@
     </main>
 
     <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="true"></div>
-
-    <dialog id="entryDialog">
-      <form method="dialog" class="modal">
-        <div class="panel-header">
-          <h2>Input Cepat Realisasi</h2>
-          <button class="icon-button" value="cancel" aria-label="Tutup" type="submit">x</button>
-        </div>
-        <label>
-          Capaian
-          <input type="number" min="0" max="100" value="87" />
-        </label>
-        <label>
-          Catatan Singkat
-          <textarea rows="3">Capaian berjalan sesuai target, eviden menunggu verifikasi.</textarea>
-        </label>
-        <button class="primary-button" value="default" type="submit">Simpan</button>
-      </form>
-    </dialog>
 
     <dialog id="monevDocumentDialog">
       <form method="dialog" class="modal monev-document-modal">

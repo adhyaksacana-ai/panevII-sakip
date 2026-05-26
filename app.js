@@ -80,119 +80,12 @@ const defaultCascades = [
 let cascades = structuredClone(defaultCascades);
 let editingIndex = null;
 
-const defaultAgreements = [
-  {
-    number: "PK-001/2026",
-    period: "Tahun 2026",
-    supervisorName: "Kepala Kejaksaan Negeri Bandung",
-    supervisorPosition: "Atasan Langsung",
-    employeeName: "Kepala Seksi Pidana Umum",
-    employeePosition: "Bawahan",
-    cascadeIndex: 0,
-    indicatorLevel: "strategic",
-    indicatorIndex: 0,
-    target: "95%",
-    status: "Ditandatangani",
-  },
-];
+const defaultAgreements = [];
 
 let agreements = structuredClone(defaultAgreements);
 let editingAgreementIndex = null;
 
-const defaultRenstra = [
-  {
-    period: "2026-2030",
-    unit: "Kejaksaan Negeri Bandung",
-    strategic: "Meningkatnya akuntabilitas kinerja satuan kerja",
-    program: "Meningkatnya kualitas perencanaan dan pelaporan kinerja",
-    activity: "Penyusunan laporan kinerja triwulanan",
-    owner: "Subbag Pembinaan",
-    strategicIndicators: [
-      { name: "Nilai SAKIP satuan kerja", targets: ["82", "84", "86", "88", "90"] },
-      { name: "Persentase rekomendasi evaluasi yang ditindaklanjuti", targets: ["80%", "85%", "90%", "95%", "100%"] },
-    ],
-    programIndicators: [
-      { name: "Persentase dokumen kinerja tepat waktu", targets: ["90%", "92%", "94%", "96%", "100%"] },
-    ],
-    activityIndicators: [
-      { name: "Jumlah laporan monitoring tepat waktu", targets: ["4 laporan", "4 laporan", "4 laporan", "4 laporan", "4 laporan"] },
-    ],
-  },
-  {
-    period: "2026-2030",
-    unit: "Kejaksaan Negeri Bandung",
-    strategic: "Meningkatnya penanganan perkara yang profesional dan berkeadilan",
-    program: "Terwujudnya penanganan perkara pidana umum yang efektif",
-    activity: "Penyelesaian administrasi dan pengendalian perkara pidana umum",
-    owner: "Seksi Pidana Umum",
-    strategicIndicators: [
-      { name: "Persentase perkara selesai sesuai standar layanan", targets: ["82%", "86%", "90%", "93%", "95%"] },
-      { name: "Indeks kualitas penanganan perkara", targets: ["78", "80", "83", "86", "88"] },
-    ],
-    programIndicators: [
-      { name: "Persentase berkas perkara yang ditangani tepat waktu", targets: ["84%", "88%", "91%", "94%", "96%"] },
-    ],
-    activityIndicators: [
-      { name: "Jumlah perkara yang diselesaikan sesuai SOP", targets: ["110 perkara", "118 perkara", "126 perkara", "134 perkara", "140 perkara"] },
-      { name: "Persentase eviden perkara tervalidasi", targets: ["86%", "90%", "93%", "96%", "98%"] },
-    ],
-  },
-  {
-    period: "2026-2030",
-    unit: "Kejaksaan Negeri Bandung",
-    strategic: "Meningkatnya efektivitas pemulihan aset dan penyelamatan keuangan negara",
-    program: "Meningkatnya penyelesaian perkara tindak pidana khusus",
-    activity: "Pelaksanaan penyidikan dan penuntutan perkara tindak pidana khusus",
-    owner: "Seksi Pidana Khusus",
-    strategicIndicators: [
-      { name: "Nilai pemulihan aset dan penyelamatan keuangan negara", targets: ["Rp2 M", "Rp2.5 M", "Rp3 M", "Rp3.5 M", "Rp4 M"] },
-    ],
-    programIndicators: [
-      { name: "Persentase perkara tindak pidana khusus yang naik tahap", targets: ["70%", "75%", "80%", "85%", "90%"] },
-      { name: "Persentase tindak lanjut hasil audit kerugian negara", targets: ["75%", "80%", "85%", "90%", "95%"] },
-    ],
-    activityIndicators: [
-      { name: "Jumlah perkara tindak pidana khusus yang diselesaikan", targets: ["8 perkara", "10 perkara", "12 perkara", "14 perkara", "16 perkara"] },
-    ],
-  },
-  {
-    period: "2026-2030",
-    unit: "Kejaksaan Negeri Bandung",
-    strategic: "Meningkatnya kualitas pelayanan hukum dan kepercayaan masyarakat",
-    program: "Terwujudnya layanan hukum yang responsif dan mudah diakses",
-    activity: "Pelayanan hukum, penerangan hukum, dan pengelolaan pengaduan masyarakat",
-    owner: "Seksi Intelijen",
-    strategicIndicators: [
-      { name: "Indeks kepuasan layanan publik", targets: ["82", "85", "88", "90", "92"] },
-      { name: "Persentase layanan tanpa pengaduan berulang", targets: ["85%", "88%", "91%", "94%", "96%"] },
-    ],
-    programIndicators: [
-      { name: "Persentase layanan selesai sesuai SLA", targets: ["86%", "89%", "92%", "95%", "97%"] },
-    ],
-    activityIndicators: [
-      { name: "Jumlah kegiatan penerangan hukum", targets: ["18 kegiatan", "22 kegiatan", "26 kegiatan", "30 kegiatan", "34 kegiatan"] },
-      { name: "Persentase pengaduan masyarakat yang ditindaklanjuti", targets: ["90%", "93%", "95%", "97%", "100%"] },
-    ],
-  },
-  {
-    period: "2026-2030",
-    unit: "Kejaksaan Negeri Bandung",
-    strategic: "Meningkatnya tata kelola barang bukti dan barang rampasan",
-    program: "Meningkatnya pengelolaan barang bukti yang transparan dan akuntabel",
-    activity: "Inventarisasi, pemeliharaan, dan penyelesaian barang bukti",
-    owner: "Seksi Pengelolaan Barang Bukti",
-    strategicIndicators: [
-      { name: "Persentase barang bukti tercatat dan terlacak", targets: ["88%", "91%", "94%", "97%", "100%"] },
-    ],
-    programIndicators: [
-      { name: "Persentase barang bukti yang memiliki status hukum jelas", targets: ["80%", "84%", "88%", "92%", "96%"] },
-    ],
-    activityIndicators: [
-      { name: "Jumlah pembaruan data barang bukti", targets: ["12 kali", "12 kali", "12 kali", "12 kali", "12 kali"] },
-      { name: "Persentase barang rampasan yang diselesaikan", targets: ["70%", "76%", "82%", "88%", "94%"] },
-    ],
-  },
-];
+const defaultRenstra = [];
 
 let renstraItems = structuredClone(defaultRenstra);
 let editingRenstraIndex = null;
@@ -200,15 +93,7 @@ let ikuFormulas = loadIkuFormulas();
 let openIkuFormulaKeys = new Set();
 let satkerAccounts = loadSatkerAccounts();
 
-const defaultRealizations = [
-  {
-    quarter: "Triwulan I",
-    agreementIndex: 0,
-    achievement: "86%",
-    budget: 125000000,
-    note: "Realisasi awal berjalan sesuai target triwulanan.",
-  },
-];
+const defaultRealizations = [];
 
 let realizations = structuredClone(defaultRealizations);
 
@@ -336,6 +221,18 @@ function clearAuth() {
   currentUser = null;
 }
 
+function getCurrentUserUnit() {
+  return (currentUser?.unit || "Satuan Kerja").toUpperCase();
+}
+
+function syncUserUnitDisplay() {
+  const unit = getCurrentUserUnit();
+  const unitDisplay = document.querySelector("#unitDisplay");
+  const realizationUnitInput = document.querySelector("#realizationUnitInput");
+  if (unitDisplay) unitDisplay.textContent = unit;
+  if (realizationUnitInput) realizationUnitInput.value = unit;
+}
+
 async function apiRequest(path, options = {}) {
   const session = getStoredAuth();
   const headers = {
@@ -362,6 +259,7 @@ function applyAuthenticatedUser(user) {
   currentUser = user;
   document.querySelector("#profileName").textContent = user.name || "Pengguna SAKIP";
   document.querySelector("#profileRole").textContent = `${user.role || "User"} - ${user.unit || "Satuan Kerja"}`;
+  syncUserUnitDisplay();
   document.querySelector("#loginShell").hidden = true;
   document.querySelector("#appShell").hidden = false;
   loadSatkerAccountsFromServer().catch(() => renderSatkerAccounts());
@@ -439,14 +337,51 @@ function getSasaranByLevel(plan, level) {
   return plan.activity;
 }
 
+function getCurrentYearTarget(item, indicator) {
+  const yearIndex = getRenstraYears(item).indexOf(getCurrentIkuYear());
+  return yearIndex >= 0 ? indicator?.targets?.[yearIndex] || "-" : "-";
+}
+
+function getIkuSyncedIndicatorsByLevel(plan, level) {
+  return getIndicatorsByLevel(plan, level).map((indicator) => ({
+    ...indicator,
+    target: getCurrentYearTarget(plan, indicator),
+  }));
+}
+
+function findAgreementIkuMatch(agreement) {
+  if (!agreement) return null;
+  const rows = getIkuRows();
+  const sourceMatch = agreement.sourceKey
+    ? rows.find(({ item, level, indicator }) => getIkuSourceKey(item, level, indicator) === agreement.sourceKey)
+    : null;
+  const fallbackPlan = renstraItems[agreement.cascadeIndex];
+  const fallbackIndicator = getIkuSyncedIndicatorsByLevel(fallbackPlan, agreement.indicatorLevel || "activity")[agreement.indicatorIndex];
+  if (sourceMatch) {
+    return {
+      ...sourceMatch,
+      indicator: {
+        ...sourceMatch.indicator,
+        target: getCurrentYearTarget(sourceMatch.item, sourceMatch.indicator),
+      },
+    };
+  }
+  if (!fallbackPlan || !fallbackIndicator) return null;
+  return {
+    item: fallbackPlan,
+    renstraIndex: agreement.cascadeIndex,
+    level: agreement.indicatorLevel || "activity",
+    indicatorIndex: agreement.indicatorIndex,
+    indicator: fallbackIndicator,
+  };
+}
+
 function getAgreementPlan(agreement) {
-  return cascades[agreement?.cascadeIndex] || cascades[0];
+  return findAgreementIkuMatch(agreement)?.item || null;
 }
 
 function getAgreementIndicator(agreement) {
-  const plan = getAgreementPlan(agreement);
-  const indicators = getIndicatorsByLevel(plan, agreement?.indicatorLevel || "activity");
-  return indicators[agreement?.indicatorIndex] || indicators[0] || { name: "-", target: "-" };
+  return findAgreementIkuMatch(agreement)?.indicator || { name: "-", target: "-" };
 }
 
 function getSignedAgreementEntries() {
@@ -612,6 +547,10 @@ function getPerformanceYears() {
   return [...new Set(renstraItems.flatMap(getRenstraYears))];
 }
 
+function getCurrentIkuYear() {
+  return String(new Date().getFullYear());
+}
+
 function getTargetIndexForYear(item, selectedYear) {
   const years = getRenstraYears(item);
   const index = years.indexOf(selectedYear);
@@ -633,6 +572,10 @@ function renderRenstraIndicatorsForYear(indicators, yearIndex, selectedYear) {
 
 function getIkuFormulaKey(item, level, indicator) {
   return [item.period, item.unit, level, getSasaranByLevel(item, level), indicator.name].join("||");
+}
+
+function getIkuSourceKey(item, level, indicator) {
+  return getIkuFormulaKey(item, level, indicator);
 }
 
 function getDefaultIkuFormula(indicator) {
@@ -667,6 +610,64 @@ function getIkuFormulaText(formula) {
   if (formula.method === "percentage_api") return "Capaian = Data pembilang API / data penyebut API x 100";
   if (formula.method === "ai_generated") return formula.generatedFormula || "Generate rumus AI untuk menentukan sumber data";
   return "Capaian = Realisasi / Target x 100";
+}
+
+function findIkuFormulaForAgreement(agreement) {
+  if (!agreement) return null;
+  const plan = getAgreementPlan(agreement);
+  const agreementIndicator = getAgreementIndicator(agreement);
+  const sasaran = getSasaranByLevel(plan, agreement.indicatorLevel);
+  const rows = getIkuRows();
+  const match = rows.find(({ item, level, indicator }) => {
+    return level === agreement.indicatorLevel && indicator.name === agreementIndicator.name && getSasaranByLevel(item, level) === sasaran;
+  }) || rows.find(({ level, indicator }) => level === agreement.indicatorLevel && indicator.name === agreementIndicator.name);
+
+  if (!match) return null;
+  const key = getIkuFormulaKey(match.item, match.level, match.indicator);
+  return {
+    key,
+    item: match.item,
+    level: match.level,
+    indicator: match.indicator,
+    formula: getIkuFormula(match.item, match.level, match.indicator),
+  };
+}
+
+function formatFormulaResult(value, unit = "%") {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  const rounded = Math.round(number * 100) / 100;
+  return `${rounded}${unit ? ` ${unit}` : ""}`.replace(" %", "%");
+}
+
+function parseRealizationFormulaNumber(value) {
+  const number = Number(String(value || "").replace(",", "."));
+  return Number.isFinite(number) ? number : null;
+}
+
+function calculateRealizationAchievement(formula, form) {
+  if (!formula) return "";
+
+  if (formula.method === "manual_value") {
+    const value = parseRealizationFormulaNumber(form.get("formulaManualValue"));
+    return value === null ? "" : formatFormulaResult(value, formula.unit);
+  }
+
+  if (formula.method === "ai_generated") {
+    const sources = formula.dataSources?.length ? formula.dataSources : [{ name: "Realisasi indikator" }, { name: "Target indikator" }];
+    const values = sources.map((_, index) => parseRealizationFormulaNumber(form.get(`formulaSource${index}`)));
+    if (values.some((value) => value === null)) return "";
+    if (values.length > 1) {
+      if (!values[1]) return "";
+      return formatFormulaResult((values[0] / values[1]) * 100, "%");
+    }
+    return formatFormulaResult(values[0], formula.unit);
+  }
+
+  const numerator = parseRealizationFormulaNumber(form.get("formulaNumerator"));
+  const denominator = parseRealizationFormulaNumber(form.get("formulaDenominator"));
+  if (numerator === null || denominator === null || denominator === 0) return "";
+  return formatFormulaResult((numerator / denominator) * 100, "%");
 }
 
 function getApiFieldOptions(apiKey) {
@@ -981,18 +982,8 @@ async function refreshSatkerPassword(accountId) {
 }
 
 function populateIkuYearSelect() {
-  const select = document.querySelector("#ikuYearSelect");
-  if (!select) return;
-
-  const currentValue = select.value;
-  const years = getPerformanceYears();
-  select.innerHTML = years.map((year) => `<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`).join("");
-
-  if (years.includes(currentValue)) {
-    select.value = currentValue;
-  } else if (years.includes("2026")) {
-    select.value = "2026";
-  }
+  const badge = document.querySelector("#ikuCurrentYearBadge");
+  if (badge) badge.textContent = `Target ${getCurrentIkuYear()}`;
 }
 
 function renderIkuSummary() {
@@ -1030,7 +1021,7 @@ function renderIkuSummary() {
 function renderIkuRows() {
   const tableRows = document.querySelector("#ikuRows");
   if (!tableRows) return;
-  const selectedYear = document.querySelector("#ikuYearSelect")?.value || getPerformanceYears()[0] || "Tahun 1";
+  const selectedYear = getCurrentIkuYear();
   const rows = getIkuRows();
 
   if (!rows.length) {
@@ -1041,14 +1032,15 @@ function renderIkuRows() {
 
   tableRows.innerHTML = rows
     .map(({ item, level, indicator, indicatorIndex }) => {
-      const yearIndex = getTargetIndexForYear(item, selectedYear);
+      const yearIndex = getRenstraYears(item).indexOf(selectedYear);
+      const currentYearTarget = yearIndex >= 0 ? indicator.targets[yearIndex] : "-";
       const formula = getIkuFormula(item, level, indicator);
       const key = getIkuFormulaKey(item, level, indicator);
       const isFormulaOpen = openIkuFormulaKeys.has(key);
 
       return `
         <tr>
-          <td><span class="badge">${escapeHtml(getLevelLabel(level))}</span></td>
+          <td><span class="badge iku-level-badge iku-level-${escapeHtml(level)}">${escapeHtml(getLevelLabel(level))}</span></td>
           <td>
             <strong>${escapeHtml(getSasaranByLevel(item, level))}</strong>
             <small>${escapeHtml(item.unit)} - ${escapeHtml(item.period)}</small>
@@ -1056,7 +1048,7 @@ function renderIkuRows() {
           <td>${escapeHtml(indicator.name)}</td>
           <td>
             <strong>${escapeHtml(selectedYear)}</strong>
-            <span>${escapeHtml(indicator.targets[yearIndex] || indicator.targets[0] || "-")}</span>
+            <span>${escapeHtml(currentYearTarget || "-")}</span>
           </td>
           <td>
             <div class="iku-formula-cell">
@@ -1094,6 +1086,50 @@ function renderIkuRows() {
 function refreshIkuViews() {
   populateIkuYearSelect();
   renderIkuRows();
+}
+
+function getRenstraIkuFormulaKeys() {
+  return new Set(getIkuRows().map(({ item, level, indicator }) => getIkuFormulaKey(item, level, indicator)));
+}
+
+function agreementHasIkuSource(agreement) {
+  return Boolean(findAgreementIkuMatch(agreement));
+}
+
+function syncIkuWithRenstra() {
+  const validKeys = getRenstraIkuFormulaKeys();
+  openIkuFormulaKeys = new Set([...openIkuFormulaKeys].filter((key) => validKeys.has(key)));
+  ikuFormulas = Object.fromEntries(Object.entries(ikuFormulas).filter(([key]) => validKeys.has(key)));
+  persistIkuFormulas();
+  const indexMap = new Map();
+  const syncedAgreements = [];
+  agreements.forEach((agreement, index) => {
+    const match = findAgreementIkuMatch(agreement);
+    if (!match) return;
+    indexMap.set(index, syncedAgreements.length);
+    syncedAgreements.push({
+      ...agreement,
+      cascadeIndex: match.renstraIndex ?? agreement.cascadeIndex,
+      indicatorLevel: match.level,
+      indicatorIndex: match.indicatorIndex ?? agreement.indicatorIndex,
+      sourceKey: getIkuSourceKey(match.item, match.level, match.indicator),
+      target: match.indicator.target,
+    });
+  });
+  agreements = syncedAgreements;
+  realizations = realizations
+    .filter((item) => indexMap.has(item.agreementIndex))
+    .map((item) => ({ ...item, agreementIndex: indexMap.get(item.agreementIndex) }));
+  refreshIkuViews();
+  populateAgreementCascadeSelect();
+  populateAgreementIndicatorSelect();
+  renderAgreementPreview();
+  renderAgreements();
+  populateRealizationCascadeSelect();
+  populateRealizationIndicatorSelect();
+  renderRealizations();
+  renderGoals();
+  renderRealizationFormulaPanel();
 }
 
 function populatePerformanceYearSelect() {
@@ -1275,9 +1311,9 @@ function resetRenstraIndicatorInputs() {
   document.querySelectorAll("[data-renstra-list]").forEach((list) => {
     list.innerHTML = "";
   });
-  createRenstraIndicatorRow("strategic", { name: "Nilai SAKIP satuan kerja", targets: ["82", "84", "86", "88", "90"] });
-  createRenstraIndicatorRow("program", { name: "Persentase program sesuai target", targets: ["90%", "92%", "94%", "96%", "100%"] });
-  createRenstraIndicatorRow("activity", { name: "Jumlah output kegiatan", targets: ["4", "4", "4", "4", "4"] });
+  createRenstraIndicatorRow("strategic");
+  createRenstraIndicatorRow("program");
+  createRenstraIndicatorRow("activity");
 }
 
 function collectRenstraIndicators(type) {
@@ -1382,6 +1418,15 @@ function fillCascadeForm(plan, index) {
 function renderRenstraRows() {
   const rows = document.querySelector("#renstraRows");
   if (!rows) return;
+
+  if (!renstraItems.length) {
+    rows.innerHTML = `
+      <tr>
+        <td colspan="9">Belum ada data Matriks Renstra. Input manual atau impor matriks untuk mengisi data dan menyinkronkan IKU.</td>
+      </tr>
+    `;
+    return;
+  }
 
   rows.innerHTML = renstraItems
     .map(
@@ -1507,6 +1552,84 @@ function populateRealizationIndicatorSelect() {
   indicatorSelect.innerHTML = agreement
     ? `<option value="${agreement.indicatorIndex}">${escapeHtml(indicator.name)} - Target ${escapeHtml(agreement.target || indicator.target)}</option>`
     : "";
+  renderRealizationFormulaPanel();
+}
+
+function renderRealizationFormulaPanel() {
+  const description = document.querySelector("#realizationFormulaDescription");
+  const status = document.querySelector("#realizationFormulaStatus");
+  const inputs = document.querySelector("#realizationFormulaInputs");
+  const achievementInput = document.querySelector("#realizationAchievementInput");
+  if (!description || !status || !inputs || !achievementInput) return;
+
+  achievementInput.value = "";
+  const { agreement } = getSelectedSignedAgreement();
+  const formulaMatch = findIkuFormulaForAgreement(agreement);
+  if (!agreement || !formulaMatch) {
+    description.textContent = "Formulasi indikator ini belum ditemukan. Lengkapi formulasi indikator terlebih dahulu.";
+    status.textContent = "Belum ada rumus";
+    status.className = "badge warning-badge";
+    inputs.innerHTML = "";
+    return;
+  }
+
+  const { formula } = formulaMatch;
+  description.textContent = getIkuFormulaText(formula);
+  status.textContent = formula.saved ? "Rumus tersimpan" : "Rumus belum disimpan";
+  status.className = formula.saved ? "badge" : "badge warning-badge";
+
+  if (!formula.saved) {
+    inputs.innerHTML = `
+      <div class="formula-alert">
+        Simpan formulasi indikator ini sebelum input realisasi kinerja.
+      </div>
+    `;
+    return;
+  }
+
+  if (formula.method === "manual_value") {
+    inputs.innerHTML = `
+      <label>
+        ${escapeHtml(formula.manualValueLabel || "Nilai capaian")}
+        <input name="formulaManualValue" type="number" step="0.01" min="0" placeholder="Masukkan nilai capaian" required />
+      </label>
+    `;
+    return;
+  }
+
+  if (formula.method === "ai_generated") {
+    const sources = formula.dataSources?.length ? formula.dataSources : [{ name: "Realisasi indikator" }, { name: "Target indikator" }];
+    inputs.innerHTML = sources
+      .map(
+        (source, index) => `
+          <label>
+            ${escapeHtml(source.name || `Sumber data ${index + 1}`)}
+            <input name="formulaSource${index}" type="number" step="0.01" min="0" placeholder="Masukkan nilai" required />
+          </label>
+        `
+      )
+      .join("");
+    return;
+  }
+
+  inputs.innerHTML = `
+    <label>
+      ${escapeHtml(formula.numerator || "Realisasi")}
+      <input name="formulaNumerator" type="number" step="0.01" min="0" placeholder="Masukkan pembilang" required />
+    </label>
+    <label>
+      ${escapeHtml(formula.denominator || "Target")}
+      <input name="formulaDenominator" type="number" step="0.01" min="0" placeholder="Masukkan penyebut" required />
+    </label>
+  `;
+}
+
+function updateRealizationAchievementPreview() {
+  const achievementInput = document.querySelector("#realizationAchievementInput");
+  const { agreement } = getSelectedSignedAgreement();
+  const formulaMatch = findIkuFormulaForAgreement(agreement);
+  if (!achievementInput || !formulaMatch?.formula?.saved) return;
+  achievementInput.value = calculateRealizationAchievement(formulaMatch.formula, new FormData(document.querySelector("#realizationForm"))) || "";
 }
 
 function renderRealizations() {
@@ -1543,7 +1666,11 @@ function renderRealizations() {
           <td>${escapeHtml(agreement?.target || indicator.target)}</td>
           <td><strong>${escapeHtml(item.achievement)}</strong></td>
           <td>${currency(item.budget)}</td>
-          <td>${escapeHtml(item.note || "-")}</td>
+          <td>
+            <strong>${escapeHtml(item.unit || getCurrentUserUnit())}</strong>
+            <br />
+            <small>${escapeHtml(item.note || "-")}</small>
+          </td>
           <td>
             <div class="row-actions">
               <button class="ghost-button" data-delete-realization="${index}" type="button">Hapus</button>
@@ -2021,16 +2148,16 @@ async function extractExcelText(file) {
 }
 
 function formatCascadeLabel(plan, index) {
-  return `${index + 1}. ${plan.strategic} / ${plan.program} / ${plan.activity}`;
+  return `${index + 1}. ${plan.unit} - ${plan.strategic} / ${plan.program} / ${plan.activity}`;
 }
 
 function populateAgreementCascadeSelect() {
   const select = document.querySelector("#agreementCascadeSelect");
   if (!select) return;
 
-  select.innerHTML = cascades
-    .map((plan, index) => `<option value="${index}">${escapeHtml(formatCascadeLabel(plan, index))}</option>`)
-    .join("");
+  select.innerHTML = renstraItems.length
+    ? renstraItems.map((plan, index) => `<option value="${index}">${escapeHtml(formatCascadeLabel(plan, index))}</option>`).join("")
+    : "<option value=\"\">Belum ada data IKU dari Matriks Renstra</option>";
 }
 
 function populateAgreementIndicatorSelect() {
@@ -2040,12 +2167,12 @@ function populateAgreementIndicatorSelect() {
   const targetInput = document.querySelector("#agreementTargetInput");
   if (!cascadeSelect || !levelSelect || !indicatorSelect || !targetInput) return;
 
-  const plan = cascades[Number(cascadeSelect.value)] || cascades[0];
-  const indicators = getIndicatorsByLevel(plan, levelSelect.value);
+  const plan = renstraItems[Number(cascadeSelect.value)] || renstraItems[0];
+  const indicators = getIkuSyncedIndicatorsByLevel(plan, levelSelect.value);
   const previousValue = indicatorSelect.value;
   indicatorSelect.innerHTML = indicators
     .map((indicator, index) => `<option value="${index}">${escapeHtml(indicator.name)}</option>`)
-    .join("");
+    .join("") || "<option value=\"\">Belum ada indikator IKU</option>";
 
   if (indicators[Number(previousValue)]) indicatorSelect.value = previousValue;
   const selected = indicators[Number(indicatorSelect.value)] || indicators[0];
@@ -2057,10 +2184,10 @@ function renderAgreementPreview() {
   const select = document.querySelector("#agreementCascadeSelect");
   if (!preview || !select) return;
 
-  const plan = cascades[Number(select.value)] || cascades[0];
+  const plan = renstraItems[Number(select.value)] || renstraItems[0];
   const level = document.querySelector("#agreementLevelSelect")?.value || "activity";
   const indicatorIndex = Number(document.querySelector("#agreementIndicatorSelect")?.value || 0);
-  const indicator = getIndicatorsByLevel(plan, level)[indicatorIndex] || { name: "-", target: "-" };
+  const indicator = getIkuSyncedIndicatorsByLevel(plan, level)[indicatorIndex] || { name: "-", target: "-" };
   const target = document.querySelector("#agreementTargetInput")?.value || indicator.target;
   if (!plan) {
     preview.innerHTML = "<p class=\"helper-text\">Belum ada sasaran kinerja yang tersedia.</p>";
@@ -2082,6 +2209,15 @@ function renderAgreementPreview() {
 function renderAgreements() {
   const rows = document.querySelector("#agreementRows");
   if (!rows) return;
+
+  if (!agreements.length) {
+    rows.innerHTML = `
+      <tr>
+        <td colspan="9">Belum ada Perjanjian Kinerja. Input Matriks Renstra agar data IKU tersedia, lalu buat PK.</td>
+      </tr>
+    `;
+    return;
+  }
 
   rows.innerHTML = agreements
     .map((agreement, index) => {
@@ -2134,17 +2270,19 @@ function resetAgreementForm() {
 
 function fillAgreementForm(agreement, index) {
   const form = document.querySelector("#agreementForm");
+  const sourceMatch = findAgreementIkuMatch(agreement);
   form.elements.agreementNumber.value = agreement.number;
   form.elements.agreementPeriod.value = agreement.period;
   form.elements.supervisorName.value = agreement.supervisorName;
   form.elements.supervisorPosition.value = agreement.supervisorPosition;
   form.elements.employeeName.value = agreement.employeeName;
   form.elements.employeePosition.value = agreement.employeePosition;
-  form.elements.agreementCascade.value = agreement.cascadeIndex;
-  form.elements.agreementLevel.value = agreement.indicatorLevel || "activity";
+  populateAgreementCascadeSelect();
+  form.elements.agreementCascade.value = sourceMatch?.renstraIndex ?? agreement.cascadeIndex;
+  form.elements.agreementLevel.value = sourceMatch?.level || agreement.indicatorLevel || "activity";
   populateAgreementIndicatorSelect();
-  form.elements.agreementIndicator.value = agreement.indicatorIndex || 0;
-  form.elements.agreementTarget.value = agreement.target || getAgreementIndicator(agreement).target;
+  form.elements.agreementIndicator.value = sourceMatch?.indicatorIndex ?? agreement.indicatorIndex ?? 0;
+  form.elements.agreementTarget.value = getAgreementIndicator(agreement).target;
   document.querySelector("#agreementEditIndex").value = index;
   document.querySelector("#saveAgreement").textContent = "Simpan Perubahan";
   document.querySelector("#cancelAgreementEdit").hidden = false;
@@ -3152,6 +3290,7 @@ function switchPage(pageId) {
   });
 
   document.querySelector("#pageTitle").textContent = titles[pageId];
+  if (pageId === "realisasi") renderRealizationFormulaPanel();
 }
 
 document.querySelectorAll(".nav-item").forEach((button) => {
@@ -3259,7 +3398,6 @@ document.querySelector("#satkerAccountRows").addEventListener("click", async (ev
 });
 
 document.querySelector("#performanceYearSelect")?.addEventListener("change", renderPerformanceTree);
-document.querySelector("#ikuYearSelect")?.addEventListener("change", renderIkuRows);
 
 function updateIkuFormulaField(key, fieldName, value) {
   const formula = {
@@ -3393,10 +3531,6 @@ document.querySelector("#resetIkuFormulas")?.addEventListener("click", () => {
   renderIkuRows();
 });
 
-document.querySelector("#openEntry").addEventListener("click", () => {
-  document.querySelector("#entryDialog").showModal();
-});
-
 document.querySelector("#akipFile").addEventListener("change", async (event) => {
   const [file] = event.target.files;
   if (!file) return;
@@ -3474,28 +3608,48 @@ document.querySelector("#deleteAkipWorksheet").addEventListener("click", deleteA
 
 document.querySelector("#realizationForm").addEventListener("submit", (event) => {
   event.preventDefault();
+  syncUserUnitDisplay();
   const form = new FormData(event.currentTarget);
   const { agreement, index } = getSelectedSignedAgreement();
   if (!agreement) {
     alert("Belum ada Perjanjian Kinerja yang ditandatangani. Tandatangani PK terlebih dahulu sebelum input realisasi.");
     return;
   }
+  const formulaMatch = findIkuFormulaForAgreement(agreement);
+  if (!formulaMatch) {
+    alert("Formulasi indikator ini belum ditemukan. Lengkapi dan simpan formulasi indikator terlebih dahulu.");
+    return;
+  }
+  if (!formulaMatch.formula.saved) {
+    alert("Formulasi indikator belum disimpan. Simpan formulasi indikator sebelum input realisasi.");
+    return;
+  }
+  const achievement = calculateRealizationAchievement(formulaMatch.formula, form);
+  if (!achievement) {
+    alert("Capaian belum bisa dihitung. Periksa nilai parameter rumus, terutama penyebut tidak boleh kosong atau 0.");
+    return;
+  }
 
   realizations.unshift({
+    unit: getCurrentUserUnit(),
     quarter: form.get("quarter"),
     agreementIndex: index,
-    achievement: form.get("achievement"),
+    achievement,
+    formulaMethod: formulaMatch.formula.method,
+    formulaText: getIkuFormulaText(formulaMatch.formula),
     budget: Number(form.get("budget")),
     note: form.get("note"),
   });
   renderRealizations();
   renderGoals();
   event.currentTarget.reset();
+  syncUserUnitDisplay();
   populateRealizationIndicatorSelect();
   alert("Realisasi kinerja triwulanan berhasil disimpan.");
 });
 
 document.querySelector("#realizationAgreementSelect").addEventListener("change", populateRealizationIndicatorSelect);
+document.querySelector("#realizationFormulaInputs").addEventListener("input", updateRealizationAchievementPreview);
 
 document.querySelector("#realizationRows").addEventListener("click", (event) => {
   const deleteButton = event.target.closest("[data-delete-realization]");
@@ -3621,7 +3775,7 @@ document.querySelector("#renstraForm").addEventListener("submit", (event) => {
   renderRenstraRows();
   populatePerformanceYearSelect();
   renderPerformanceTree();
-  refreshIkuViews();
+  syncIkuWithRenstra();
   resetRenstraForm();
   alert("Matriks Renstra berhasil disimpan.");
 });
@@ -3649,7 +3803,7 @@ document.querySelector("#renstraRows").addEventListener("click", (event) => {
     renderRenstraRows();
     populatePerformanceYearSelect();
     renderPerformanceTree();
-    refreshIkuViews();
+    syncIkuWithRenstra();
     if (editingRenstraIndex === index) resetRenstraForm();
   }
 });
@@ -3659,7 +3813,7 @@ document.querySelector("#resetRenstra").addEventListener("click", () => {
   renderRenstraRows();
   populatePerformanceYearSelect();
   renderPerformanceTree();
-  refreshIkuViews();
+  syncIkuWithRenstra();
   resetRenstraForm();
 });
 
@@ -3714,8 +3868,8 @@ document.querySelector("#importMatrix").addEventListener("click", () => {
     renderRenstraRows();
     populatePerformanceYearSelect();
     renderPerformanceTree();
-    refreshIkuViews();
-    alert(`${imported.length} baris Matriks Renstra berhasil diekstrak dan diinput otomatis.`);
+    syncIkuWithRenstra();
+    alert(`${imported.length} baris Matriks Renstra berhasil diekstrak, diinput otomatis, dan disinkronkan ke format IKU.`);
   } catch (error) {
     alert(`Gagal membaca Matriks Renstra: ${error.message}`);
   }
@@ -3733,11 +3887,19 @@ document.querySelector("#agreementIndicatorSelect").addEventListener("change", (
   populateAgreementIndicatorSelect();
   renderAgreementPreview();
 });
-document.querySelector("#agreementTargetInput").addEventListener("input", renderAgreementPreview);
-
 document.querySelector("#agreementForm").addEventListener("submit", (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
+  const sourceIndex = Number(form.get("agreementCascade"));
+  const sourcePlan = renstraItems[sourceIndex];
+  const sourceIndicators = getIkuSyncedIndicatorsByLevel(sourcePlan, form.get("agreementLevel"));
+  const indicatorIndex = Number(form.get("agreementIndicator"));
+
+  if (!sourcePlan || !sourceIndicators[indicatorIndex]) {
+    alert("Data sasaran, indikator, dan target IKU belum tersedia. Input atau impor Matriks Renstra terlebih dahulu.");
+    return;
+  }
+
   const payload = {
     number: form.get("agreementNumber"),
     period: form.get("agreementPeriod"),
@@ -3745,10 +3907,11 @@ document.querySelector("#agreementForm").addEventListener("submit", (event) => {
     supervisorPosition: form.get("supervisorPosition"),
     employeeName: form.get("employeeName"),
     employeePosition: form.get("employeePosition"),
-    cascadeIndex: Number(form.get("agreementCascade")),
+    cascadeIndex: sourceIndex,
     indicatorLevel: form.get("agreementLevel"),
-    indicatorIndex: Number(form.get("agreementIndicator")),
-    target: form.get("agreementTarget"),
+    indicatorIndex,
+    sourceKey: getIkuSourceKey(sourcePlan, form.get("agreementLevel"), sourceIndicators[indicatorIndex]),
+    target: sourceIndicators[indicatorIndex].target,
     status: editingAgreementIndex === null ? "Draft" : agreements[editingAgreementIndex].status,
   };
 
@@ -3879,7 +4042,7 @@ populateAgreementIndicatorSelect();
 populateRealizationCascadeSelect();
 populateRealizationIndicatorSelect();
 populatePerformanceYearSelect();
-refreshIkuViews();
+syncIkuWithRenstra();
 resetIndicatorInputs();
 resetRenstraIndicatorInputs();
 renderPlans();
