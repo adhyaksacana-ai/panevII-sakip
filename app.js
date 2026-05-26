@@ -409,7 +409,7 @@ function renderRenstraIndicatorList(indicators) {
           <strong>${escapeHtml(indicator.name)}</strong>
           <ul class="target-list">
             ${indicator.targets
-              .map((target, index) => `<li><span>Tahun ${index + 1}</span><strong>${escapeHtml(target)}</strong></li>`)
+              .map((target, index) => `<li><span>T${index + 1}</span><strong>${escapeHtml(target)}</strong></li>`)
               .join("")}
           </ul>
         </div>
@@ -606,7 +606,7 @@ function getIkuFormula(item, level, indicator) {
 }
 
 function getIkuFormulaText(formula) {
-  if (formula.method === "manual_value") return "Capaian = Nilai manual tanpa rumus";
+  if (formula.method === "manual_value") return "Nilai capaian dan capaian indikator diinput manual";
   if (formula.method === "percentage_api") return "Capaian = Data pembilang API / data penyebut API x 100";
   if (formula.method === "ai_generated") return formula.generatedFormula || "Generate rumus AI untuk menentukan sumber data";
   return "Capaian = Realisasi / Target x 100";
@@ -649,8 +649,9 @@ function calculateRealizationAchievement(formula, form) {
   if (!formula) return "";
 
   if (formula.method === "manual_value") {
-    const value = parseRealizationFormulaNumber(form.get("formulaManualValue"));
-    return value === null ? "" : formatFormulaResult(value, formula.unit);
+    const value = String(form.get("formulaManualValue") || "").trim();
+    const achievement = String(form.get("achievement") || "").trim();
+    return !value || !achievement ? "" : achievement;
   }
 
   if (formula.method === "ai_generated") {
@@ -1023,6 +1024,13 @@ function renderIkuRows() {
   if (!tableRows) return;
   const selectedYear = getCurrentIkuYear();
   const rows = getIkuRows();
+  const searchKeyword = String(document.querySelector("#ikuSearchInput")?.value || "").trim().toLowerCase();
+  const filteredRows = searchKeyword
+    ? rows.filter(({ item, level, indicator }) => {
+        const sasaran = getSasaranByLevel(item, level);
+        return `${sasaran} ${indicator.name}`.toLowerCase().includes(searchKeyword);
+      })
+    : rows;
 
   if (!rows.length) {
     tableRows.innerHTML = "<tr><td colspan=\"6\">Belum ada data IKU. Input atau impor Matriks Renstra terlebih dahulu.</td></tr>";
@@ -1030,7 +1038,13 @@ function renderIkuRows() {
     return;
   }
 
-  tableRows.innerHTML = rows
+  if (!filteredRows.length) {
+    tableRows.innerHTML = "<tr><td colspan=\"6\">Tidak ada IKU yang cocok dengan pencarian nama sasaran atau indikator.</td></tr>";
+    renderIkuSummary();
+    return;
+  }
+
+  tableRows.innerHTML = filteredRows
     .map(({ item, level, indicator, indicatorIndex }) => {
       const yearIndex = getRenstraYears(item).indexOf(selectedYear);
       const currentYearTarget = yearIndex >= 0 ? indicator.targets[yearIndex] : "-";
@@ -1147,18 +1161,14 @@ function populatePerformanceYearSelect() {
   }
 }
 
-function renderPerformanceTree() {
-  const performanceTree = document.querySelector("#performanceTree");
-  if (!performanceTree) return;
-  const selectedYear = document.querySelector("#performanceYearSelect")?.value || getPerformanceYears()[0] || "Tahun 1";
-
+function buildPerformanceTreeHtml(selectedYear) {
   if (!renstraItems.length) {
-    performanceTree.innerHTML = "<p class=\"helper-text\">Belum ada data Matriks Renstra untuk ditampilkan.</p>";
-    return;
+    return "<p class=\"helper-text\">Belum ada data Matriks Renstra untuk ditampilkan.</p>";
   }
 
   const unitName = renstraItems[0]?.unit || "Satuan Kerja";
   const period = renstraItems[0]?.period || "Renstra";
+  const branchCount = Math.max(renstraItems.length, 1);
   const branches = renstraItems
     .map((item) => {
       const yearIndex = getTargetIndexForYear(item, selectedYear);
@@ -1190,7 +1200,7 @@ function renderPerformanceTree() {
     })
     .join("");
 
-  performanceTree.innerHTML = `
+  return `
     <section class="org-chart unified-tree">
       <div class="org-root">
         <article class="tree-node satker-root">
@@ -1199,9 +1209,28 @@ function renderPerformanceTree() {
           <small>Periode ${escapeHtml(period)} - Target ${escapeHtml(selectedYear)}</small>
         </article>
       </div>
-      <ul class="org-programs unified-branches">${branches}</ul>
+      <ul class="org-programs unified-branches" style="--branch-count: ${branchCount}">${branches}</ul>
     </section>
   `;
+}
+
+function renderPerformanceTree() {
+  const performanceTree = document.querySelector("#performanceTree");
+  if (!performanceTree) return;
+  const selectedYear = document.querySelector("#performanceYearSelect")?.value || getPerformanceYears()[0] || "Tahun 1";
+  performanceTree.innerHTML = buildPerformanceTreeHtml(selectedYear);
+}
+
+function renderPerformanceTreeDialog() {
+  const dialog = document.querySelector("#performanceTreeDialog");
+  const content = document.querySelector("#performanceTreeDialogContent");
+  const copy = document.querySelector("#performanceTreeDialogCopy");
+  if (!dialog || !content || !copy) return;
+
+  const selectedYear = document.querySelector("#performanceYearSelect")?.value || getPerformanceYears()[0] || "Tahun 1";
+  copy.textContent = `Sasaran, indikator, dan target dari Matriks Renstra untuk tahun ${selectedYear}.`;
+  content.innerHTML = buildPerformanceTreeHtml(selectedYear);
+  dialog.showModal();
 }
 
 function populateCascadeSelects() {
@@ -1280,16 +1309,18 @@ function createRenstraIndicatorRow(type, indicator = {}) {
       Indikator
       <input name="${type}RenstraIndicatorName" value="${escapeHtml(indicator.name || "")}" placeholder="Nama indikator" required />
     </label>
-    ${targets
-      .map(
-        (target, index) => `
-          <label>
-            Tahun ${index + 1}
-            <input name="${type}RenstraTarget${index + 1}" value="${escapeHtml(target)}" placeholder="Target" required />
-          </label>
-        `
-      )
-      .join("")}
+    <div class="renstra-target-pack" aria-label="Target 5 tahun">
+      ${targets
+        .map(
+          (target, index) => `
+            <label>
+              <span>T${index + 1}</span>
+              <input name="${type}RenstraTarget${index + 1}" value="${escapeHtml(target)}" placeholder="-" required />
+            </label>
+          `
+        )
+        .join("")}
+    </div>
     <button class="icon-button" data-remove-renstra-indicator type="button" aria-label="Hapus indikator">x</button>
   `;
 
@@ -1563,6 +1594,9 @@ function renderRealizationFormulaPanel() {
   if (!description || !status || !inputs || !achievementInput) return;
 
   achievementInput.value = "";
+  achievementInput.readOnly = true;
+  achievementInput.required = false;
+  achievementInput.placeholder = "Hasil rumus otomatis";
   const { agreement } = getSelectedSignedAgreement();
   const formulaMatch = findIkuFormulaForAgreement(agreement);
   if (!agreement || !formulaMatch) {
@@ -1588,10 +1622,13 @@ function renderRealizationFormulaPanel() {
   }
 
   if (formula.method === "manual_value") {
+    achievementInput.readOnly = false;
+    achievementInput.required = true;
+    achievementInput.placeholder = "Ketik capaian indikator";
     inputs.innerHTML = `
       <label>
         ${escapeHtml(formula.manualValueLabel || "Nilai capaian")}
-        <input name="formulaManualValue" type="number" step="0.01" min="0" placeholder="Masukkan nilai capaian" required />
+        <input name="formulaManualValue" placeholder="Ketik nilai capaian" required />
       </label>
     `;
     return;
@@ -1629,6 +1666,7 @@ function updateRealizationAchievementPreview() {
   const { agreement } = getSelectedSignedAgreement();
   const formulaMatch = findIkuFormulaForAgreement(agreement);
   if (!achievementInput || !formulaMatch?.formula?.saved) return;
+  if (formulaMatch.formula.method === "manual_value") return;
   achievementInput.value = calculateRealizationAchievement(formulaMatch.formula, new FormData(document.querySelector("#realizationForm"))) || "";
 }
 
@@ -3398,6 +3436,8 @@ document.querySelector("#satkerAccountRows").addEventListener("click", async (ev
 });
 
 document.querySelector("#performanceYearSelect")?.addEventListener("change", renderPerformanceTree);
+document.querySelector("#performanceTreeViewButton")?.addEventListener("click", renderPerformanceTreeDialog);
+document.querySelector("#ikuSearchInput")?.addEventListener("input", renderIkuRows);
 
 function updateIkuFormulaField(key, fieldName, value) {
   const formula = {
@@ -3626,7 +3666,10 @@ document.querySelector("#realizationForm").addEventListener("submit", (event) =>
   }
   const achievement = calculateRealizationAchievement(formulaMatch.formula, form);
   if (!achievement) {
-    alert("Capaian belum bisa dihitung. Periksa nilai parameter rumus, terutama penyebut tidak boleh kosong atau 0.");
+    const message = formulaMatch.formula.method === "manual_value"
+      ? "Nilai capaian dan capaian indikator wajib diisi."
+      : "Capaian belum bisa dihitung. Periksa nilai parameter rumus, terutama penyebut tidak boleh kosong atau 0.";
+    alert(message);
     return;
   }
 

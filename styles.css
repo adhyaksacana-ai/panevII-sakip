@@ -785,19 +785,19 @@ textarea:focus {
 }
 
 .org-chart {
-  min-width: 1180px;
+  min-width: 1060px;
   border: 1px solid #dbe4ef;
   border-radius: var(--radius);
   background:
     linear-gradient(#edf2f7 1px, transparent 1px),
     linear-gradient(90deg, #edf2f7 1px, transparent 1px),
     #fbfcfe;
-  background-size: 26px 26px;
-  padding: 16px;
+  background-size: 24px 24px;
+  padding: 14px;
 }
 
 .unified-tree {
-  min-width: 1320px;
+  min-width: 1180px;
 }
 
 .org-root {
@@ -827,15 +827,15 @@ textarea:focus {
 .org-programs {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(5, minmax(220px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(var(--branch-count, 5), minmax(190px, 1fr));
+  gap: 12px;
 }
 
 .org-programs::before {
   position: absolute;
   top: 0;
-  left: calc(16.66% + 11px);
-  right: calc(16.66% + 11px);
+  left: calc(50% / var(--branch-count, 5));
+  right: calc(50% / var(--branch-count, 5));
   height: 2px;
   background: #a9b8ca;
   content: "";
@@ -844,8 +844,8 @@ textarea:focus {
 .org-program {
   position: relative;
   display: grid;
-  gap: 14px;
-  padding-top: 26px;
+  gap: 12px;
+  padding-top: 24px;
 }
 
 .org-program::before {
@@ -853,42 +853,44 @@ textarea:focus {
   top: 0;
   left: 50%;
   width: 2px;
-  height: 26px;
+  height: 24px;
   background: #a9b8ca;
   content: "";
+  transform: translateX(-50%);
 }
 
 .org-activities {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .org-activity {
   position: relative;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 8px;
   align-items: stretch;
 }
 
 .org-activity::before {
   position: absolute;
-  top: -14px;
-  left: 24px;
+  top: -8px;
+  left: 50%;
   width: 2px;
-  height: 14px;
+  height: 8px;
   background: #c3cedc;
   content: "";
+  transform: translateX(-50%);
 }
 
 .tree-node {
   position: relative;
-  min-height: 86px;
+  min-height: 76px;
   border: 1px solid #d6dfeb;
   border-radius: var(--radius);
   background: #fff;
   box-shadow: var(--shadow-soft);
-  padding: 10px;
+  padding: 9px;
 }
 
 .tree-node strong,
@@ -899,14 +901,14 @@ textarea:focus {
 
 .tree-node strong {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
 .tree-node small {
   margin-top: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.35;
 }
 
@@ -917,18 +919,18 @@ textarea:focus {
   background: var(--surface-soft);
   color: var(--muted);
   padding: 3px 7px;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .tree-node.strategic {
-  width: min(460px, 100%);
+  width: min(400px, 100%);
   border-top: 5px solid var(--accent);
 }
 
 .tree-node.satker-root {
-  width: min(360px, 100%);
+  width: min(320px, 100%);
   border-top: 5px solid #14213d;
 }
 
@@ -1154,6 +1156,23 @@ tbody tr:last-child td {
   min-width: 1500px;
 }
 
+.iku-list-actions {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.search-field {
+  min-width: min(320px, 100%);
+}
+
+.search-field span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .iku-formula-cell,
 .iku-parameter-grid {
   display: grid;
@@ -1340,31 +1359,77 @@ tbody tr:last-child td {
 
 .renstra-indicator-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(88px, 0.5fr)) 36px;
-  gap: 8px;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(280px, 1fr) 36px;
+  gap: 10px;
   align-items: end;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+  padding: 10px;
 }
 
 .renstra-indicator-row .icon-button {
   align-self: end;
 }
 
-.target-list {
+.renstra-target-pack {
   display: grid;
+  grid-template-columns: repeat(5, minmax(42px, 1fr));
   gap: 6px;
-  margin: 8px 0 0;
+}
+
+.renstra-target-pack label {
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.renstra-target-pack label span {
+  line-height: 1;
+}
+
+.renstra-target-pack input {
+  height: 38px;
+  min-width: 0;
+  padding: 0 6px;
+  text-align: center;
+}
+
+.target-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .target-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  border-radius: var(--radius);
-  background: rgba(240, 244, 248, 0.82);
-  padding: 7px 8px;
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border: 1px solid #dbe4ef;
+  border-radius: 999px;
+  background: #f8fafc;
+  padding: 4px 7px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.target-list li span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.target-list li strong {
+  overflow: hidden;
+  max-width: 92px;
+  text-overflow: ellipsis;
 }
 
 .sasaran-row {
@@ -1875,12 +1940,34 @@ dialog {
   width: min(1120px, calc(100vw - 32px));
 }
 
+#performanceTreeDialog {
+  width: min(1440px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+
 dialog::backdrop {
   background: rgba(16, 24, 40, 0.42);
 }
 
 .modal {
   padding: 18px;
+}
+
+.performance-tree-modal {
+  display: grid;
+  max-height: calc(100vh - 24px);
+  gap: 16px;
+  overflow: hidden;
+}
+
+.full-tree-view {
+  max-height: calc(100vh - 132px);
+  overflow: auto;
+  padding: 4px;
+}
+
+.full-tree-view .org-chart {
+  min-width: max(1180px, 100%);
 }
 
 .logout-modal {
@@ -1981,6 +2068,10 @@ dialog::backdrop {
   .org-programs {
     grid-template-columns: repeat(5, minmax(220px, 1fr));
   }
+
+  .renstra-indicator-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 680px) {
@@ -2027,6 +2118,10 @@ dialog::backdrop {
   .file-meta-grid,
   .renstra-indicator-row {
     grid-template-columns: 1fr;
+  }
+
+  .renstra-target-pack {
+    grid-template-columns: repeat(5, minmax(48px, 1fr));
   }
 
   .akip-upload-header,
