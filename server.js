@@ -241,7 +241,7 @@ async function handleApi(request, response, url) {
 
   if (url.pathname === "/api/meta" && request.method === "GET") {
     sendJson(response, 200, {
-      name: "SAKIP Kejaksaan API",
+      name: "SAKIP KEJAKSAAN RI API",
       version: "0.1.0",
       endpoints: [
         "GET /api/health",

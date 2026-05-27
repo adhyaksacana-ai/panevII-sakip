@@ -42,7 +42,7 @@ textarea {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -60,7 +60,7 @@ textarea {
 
 .login-card {
   display: grid;
-  width: min(420px, 100%);
+  width: min(540px, 100%);
   gap: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -106,21 +106,28 @@ textarea {
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   padding: 6px 4px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .brand-mark {
   display: grid;
-  width: 46px;
-  height: 46px;
+  flex: 0 0 auto;
+  width: 92px;
+  height: 118px;
   place-items: center;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, #f8d48b, var(--gold));
-  color: #152033;
-  box-shadow: 0 12px 22px rgba(194, 135, 33, 0.24);
-  font-weight: 800;
+  border-radius: 20px;
+  background: transparent;
+  filter: drop-shadow(0 14px 18px rgba(194, 135, 33, 0.26));
+  overflow: hidden;
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand strong,
@@ -128,8 +135,16 @@ textarea {
   display: block;
 }
 
+.brand > div:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
 .brand strong {
+  min-width: 220px;
   letter-spacing: 0;
+  line-height: 1.12;
+  white-space: nowrap;
 }
 
 .brand span,
@@ -145,15 +160,32 @@ textarea {
 
 .nav-item {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-height: 44px;
   border: 1px solid transparent;
   border-radius: var(--radius);
   background: transparent;
   color: rgba(255, 255, 255, 0.75);
   cursor: pointer;
+  font-weight: 800;
+  letter-spacing: 0;
   text-align: left;
+  text-transform: uppercase;
   padding: 0 14px 0 38px;
   transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.nav-item svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .nav-item::before {
@@ -595,6 +627,185 @@ textarea:focus {
   font-size: 12px;
   font-weight: 800;
   text-decoration: none;
+}
+
+.rak-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.rak-filter-grid,
+.rak-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rak-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rak-quarter-set {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+  padding: 12px;
+}
+
+.rak-quarter-set legend {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rak-table-wrap {
+  overflow-x: auto;
+}
+
+.rak-table {
+  min-width: 2300px;
+}
+
+.rak-table th,
+.rak-table td {
+  vertical-align: top;
+}
+
+.rak-table small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.rak-progress {
+  position: relative;
+  height: 7px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e8eef5;
+}
+
+.rak-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--primary), #35a889);
+}
+
+.rak-card-list {
+  display: none;
+}
+
+.rak-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+  padding: 14px;
+}
+
+.rak-card strong,
+.rak-card span,
+.rak-card small {
+  display: block;
+}
+
+.rak-card > span,
+.rak-card small {
+  color: var(--muted);
+}
+
+.rak-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rak-card-progress {
+  display: grid;
+  gap: 7px;
+}
+
+.rak-card-progress > div {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.rak-card-progress span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rak-detail-modal {
+  display: grid;
+  gap: 16px;
+}
+
+#rencanaAksiDetailDialog {
+  width: min(980px, calc(100vw - 28px));
+}
+
+.rak-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rak-detail-grid article {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+  padding: 12px;
+}
+
+.rak-detail-grid span,
+.rak-detail-grid strong {
+  display: block;
+}
+
+.rak-detail-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rak-detail-grid strong {
+  margin-top: 6px;
+}
+
+.rak-detail-wide {
+  grid-column: 1 / -1;
+}
+
+.rak-quarter-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.rak-quarter-summary div {
+  display: grid;
+  gap: 6px;
+}
+
+.rak-quarter-summary em {
+  width: max-content;
+  font-style: normal;
 }
 
 .goal-row {
@@ -1162,6 +1373,22 @@ tbody tr:last-child td {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.renstra-list-actions {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(180px, 220px) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.renstra-list-actions .search-field {
+  min-width: 0;
+}
+
+.renstra-list-actions .ghost-button {
+  height: 44px;
+  white-space: nowrap;
 }
 
 .search-field {
@@ -2041,6 +2268,10 @@ dialog::backdrop {
   .metric-grid,
   .monev-summary-grid,
   .monev-quarter-summary,
+  .rak-filter-grid,
+  .rak-form,
+  .rak-quarter-set,
+  .rak-quarter-summary,
   .two-column,
   .upload-layout,
   .cascade-form,
@@ -2072,6 +2303,13 @@ dialog::backdrop {
   .renstra-indicator-row {
     grid-template-columns: 1fr;
   }
+
+  .rak-filter-grid,
+  .rak-form,
+  .rak-quarter-set,
+  .rak-quarter-summary {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 680px) {
@@ -2086,6 +2324,16 @@ dialog::backdrop {
     flex-direction: column;
   }
 
+  .brand-mark {
+    width: 78px;
+    height: 100px;
+  }
+
+  .brand strong {
+    min-width: 0;
+    white-space: normal;
+  }
+
   h1 {
     font-size: 24px;
   }
@@ -2093,6 +2341,11 @@ dialog::backdrop {
   .metric-grid,
   .monev-summary-grid,
   .monev-quarter-summary,
+  .rak-filter-grid,
+  .rak-form,
+  .rak-quarter-set,
+  .rak-quarter-summary,
+  .rak-detail-grid,
   .two-column,
   .upload-layout,
   .cascade-form,
@@ -2122,6 +2375,30 @@ dialog::backdrop {
 
   .renstra-target-pack {
     grid-template-columns: repeat(5, minmax(48px, 1fr));
+  }
+
+  .rak-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .renstra-list-actions {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .rak-actions button {
+    width: 100%;
+  }
+
+  .rak-table-wrap {
+    display: none;
+  }
+
+  .rak-card-list {
+    display: grid;
+    gap: 12px;
   }
 
   .akip-upload-header,

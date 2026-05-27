@@ -15,6 +15,7 @@ const goals = [
 
 const authStorageKey = "sakipAuthSession";
 const satkerAccountsStorageKey = "sakipSatkerAccounts";
+const rencanaAksiStorageKey = "sakipRencanaAksiKinerja";
 let currentUser = null;
 
 const defaultCascades = [
@@ -96,6 +97,7 @@ let satkerAccounts = loadSatkerAccounts();
 const defaultRealizations = [];
 
 let realizations = structuredClone(defaultRealizations);
+let rencanaAksiKinerja = loadRencanaAksiKinerja();
 
 const akipDocumentTypes = [
   "Renstra",
@@ -157,12 +159,13 @@ const reviews = [
 
 const titles = {
   dashboard: "Dashboard Kinerja",
-  renstra: "Matriks Renstra Satker",
+  renstra: "Rencana Strategis",
   rencana: "Rencana Kinerja Tahunan",
   iku: "Indikator Kinerja Utama",
   "akun-satker": "Akun Satker",
   perjanjian: "Perjanjian Kinerja",
   realisasi: "Realisasi Kinerja",
+  "rencana-aksi-kinerja": "Rencana Aksi Kinerja",
   eviden: "Dokumen AKIP",
   evaluasi: "Monitoring dan Evaluasi",
   "evaluasi-akip": "Evaluasi AKIP",
@@ -198,6 +201,18 @@ function loadSatkerAccounts() {
 
 function persistSatkerAccounts() {
   window.localStorage.setItem(satkerAccountsStorageKey, JSON.stringify(satkerAccounts));
+}
+
+function loadRencanaAksiKinerja() {
+  try {
+    return JSON.parse(window.localStorage.getItem(rencanaAksiStorageKey) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function persistRencanaAksiKinerja() {
+  window.localStorage.setItem(rencanaAksiStorageKey, JSON.stringify(rencanaAksiKinerja));
 }
 
 function isBackendAvailable() {
@@ -313,6 +328,52 @@ function currency(value) {
     currency: "IDR",
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
+}
+
+function formatDateTime(value) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function percentValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0;
+  return Math.max(0, Math.min(number, 100));
+}
+
+function getBudgetBadge(value) {
+  const percent = percentValue(value);
+  if (percent >= 80) return { label: "Tinggi", className: "done" };
+  if (percent >= 50) return { label: "Sedang", className: "warning" };
+  return { label: "Rendah", className: "danger" };
+}
+
+function renderMiniProgress(value, label = "") {
+  const percent = percentValue(value);
+  return `
+    <div class="rak-progress" aria-label="${escapeHtml(label || `Progress ${percent}%`)}">
+      <span style="width: ${percent}%"></span>
+    </div>
+  `;
+}
+
+function parseTargetProgress(value, targetYear) {
+  const target = parseTargetNumber(targetYear);
+  const current = parseTargetNumber(value);
+  if (target > 0 && current > 0) return Math.min(Math.round((current / target) * 100), 100);
+  return value ? 25 : 0;
+}
+
+function getRakQuarters() {
+  return [
+    { key: "tw1", label: "TW I", target: "target_tw1", budget: "realisasi_anggaran_tw1" },
+    { key: "tw2", label: "TW II", target: "target_tw2", budget: "realisasi_anggaran_tw2" },
+    { key: "tw3", label: "TW III", target: "target_tw3", budget: "realisasi_anggaran_tw3" },
+    { key: "tw4", label: "TW IV", target: "target_tw4", budget: "realisasi_anggaran_tw4" },
+  ];
 }
 
 function getIndicatorsByLevel(plan, level) {
@@ -1448,12 +1509,33 @@ function fillCascadeForm(plan, index) {
 
 function renderRenstraRows() {
   const rows = document.querySelector("#renstraRows");
-  if (!rows) return;
+  const head = document.querySelector("#renstraTableHead");
+  if (!rows || !head) return;
+  const sasaranLevel = document.querySelector("#renstraSasaranLevelFilter")?.value || "";
+  const indicatorLevel = document.querySelector("#renstraIndicatorLevelFilter")?.value || "";
+  const levels = [
+    { key: "strategic", sasaranHeader: "Sasaran Strategis", indicatorHeader: "Indikator Strategis" },
+    { key: "program", sasaranHeader: "Sasaran Program", indicatorHeader: "Indikator Program" },
+    { key: "activity", sasaranHeader: "Sasaran Kegiatan", indicatorHeader: "Indikator Kegiatan" },
+  ];
+  const sasaranLevels = sasaranLevel ? levels.filter((level) => level.key === sasaranLevel) : levels;
+  const indicatorLevels = indicatorLevel ? levels.filter((level) => level.key === indicatorLevel) : levels;
+  const columnCount = 3 + sasaranLevels.length + indicatorLevels.length;
+
+  head.innerHTML = `
+    <tr>
+      <th>Periode</th>
+      ${sasaranLevels.map((level) => `<th>${escapeHtml(level.sasaranHeader)}</th>`).join("")}
+      ${indicatorLevels.map((level) => `<th>${escapeHtml(level.indicatorHeader)}</th>`).join("")}
+      <th>Penanggung Jawab</th>
+      <th>Aksi</th>
+    </tr>
+  `;
 
   if (!renstraItems.length) {
     rows.innerHTML = `
       <tr>
-        <td colspan="9">Belum ada data Matriks Renstra. Input manual atau impor matriks untuk mengisi data dan menyinkronkan IKU.</td>
+        <td colspan="${columnCount}">Belum ada data Matriks Renstra. Input manual atau impor matriks untuk mengisi data dan menyinkronkan IKU.</td>
       </tr>
     `;
     return;
@@ -1468,12 +1550,8 @@ function renderRenstraRows() {
             <br />
             <small>${escapeHtml(item.unit)}</small>
           </td>
-          <td>${escapeHtml(item.strategic)}</td>
-          <td>${renderRenstraIndicatorList(item.strategicIndicators)}</td>
-          <td>${escapeHtml(item.program)}</td>
-          <td>${renderRenstraIndicatorList(item.programIndicators)}</td>
-          <td>${escapeHtml(item.activity)}</td>
-          <td>${renderRenstraIndicatorList(item.activityIndicators)}</td>
+          ${sasaranLevels.map((level) => `<td>${escapeHtml(getSasaranByLevel(item, level.key))}</td>`).join("")}
+          ${indicatorLevels.map((level) => `<td>${renderRenstraIndicatorList(getIndicatorsByLevel(item, level.key))}</td>`).join("")}
           <td>${escapeHtml(item.owner)}</td>
           <td>
             <div class="row-actions">
@@ -1719,6 +1797,378 @@ function renderRealizations() {
     })
     .join("");
   renderMonevMonitoring();
+}
+
+function getRencanaAksiFilterValues() {
+  return {
+    tahun: document.querySelector("#rakFilterTahun")?.value || "",
+    sasaran: document.querySelector("#rakFilterSasaran")?.value || "",
+    pj: document.querySelector("#rakFilterPj")?.value || "",
+    triwulan: document.querySelector("#rakFilterTriwulan")?.value || "",
+  };
+}
+
+function getFilteredRencanaAksi() {
+  const filters = getRencanaAksiFilterValues();
+  return rencanaAksiKinerja.filter((item) => {
+    if (filters.tahun && String(item.tahun) !== filters.tahun) return false;
+    if (filters.sasaran && item.sasaran_strategis !== filters.sasaran) return false;
+    if (filters.pj && item.penanggung_jawab !== filters.pj) return false;
+    if (filters.triwulan && !String(item[`target_${filters.triwulan}`] || item[`realisasi_anggaran_${filters.triwulan}`] || "").trim()) return false;
+    return true;
+  });
+}
+
+function getRakOptionValues(field) {
+  return [...new Set(rencanaAksiKinerja.map((item) => String(item[field] || "").trim()).filter(Boolean))].sort();
+}
+
+function populateRencanaAksiFilters() {
+  const current = getRencanaAksiFilterValues();
+  const tahunSelect = document.querySelector("#rakFilterTahun");
+  const sasaranSelect = document.querySelector("#rakFilterSasaran");
+  const pjSelect = document.querySelector("#rakFilterPj");
+  if (!tahunSelect || !sasaranSelect || !pjSelect) return;
+
+  const years = [...new Set(rencanaAksiKinerja.map((item) => String(item.tahun || "").trim()).filter(Boolean))].sort();
+  tahunSelect.innerHTML = `<option value="">Semua Tahun</option>${years
+    .map((year) => `<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`)
+    .join("")}`;
+  sasaranSelect.innerHTML = `<option value="">Semua Sasaran</option>${getRakOptionValues("sasaran_strategis")
+    .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+    .join("")}`;
+  pjSelect.innerHTML = `<option value="">Semua PJ</option>${getRakOptionValues("penanggung_jawab")
+    .map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`)
+    .join("")}`;
+
+  tahunSelect.value = years.includes(current.tahun) ? current.tahun : "";
+  sasaranSelect.value = getRakOptionValues("sasaran_strategis").includes(current.sasaran) ? current.sasaran : "";
+  pjSelect.value = getRakOptionValues("penanggung_jawab").includes(current.pj) ? current.pj : "";
+}
+
+function populateRencanaAksiDatalists() {
+  const sasaranOptions = document.querySelector("#rakSasaranOptions");
+  const indikatorOptions = document.querySelector("#rakIndikatorOptions");
+  const pjOptions = document.querySelector("#rakPjOptions");
+  if (!sasaranOptions || !indikatorOptions || !pjOptions) return;
+
+  const sasaran = [...new Set([...renstraItems.map((item) => item.strategic), ...getRakOptionValues("sasaran_strategis")].filter(Boolean))];
+  const indicators = [
+    ...renstraItems.flatMap((item) => item.strategicIndicators.map((indicator) => indicator.name)),
+    ...getRakOptionValues("indikator_kinerja"),
+  ];
+  const pjs = [...new Set([...renstraItems.map((item) => item.owner), ...getRakOptionValues("penanggung_jawab")].filter(Boolean))];
+  sasaranOptions.innerHTML = sasaran.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
+  indikatorOptions.innerHTML = [...new Set(indicators)].map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
+  pjOptions.innerHTML = pjs.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
+}
+
+function renderRakTargetCell(item, quarter) {
+  const value = item[quarter.target] || "-";
+  const progress = parseTargetProgress(value, item.target_tahun);
+  return `
+    <strong>${escapeHtml(value)}</strong>
+    <small>${progress}% dari target tahun</small>
+    ${renderMiniProgress(progress, `Progress target ${quarter.label}`)}
+  `;
+}
+
+function renderRakBudgetCell(item, quarter) {
+  const value = percentValue(item[quarter.budget]);
+  const badge = getBudgetBadge(value);
+  return `
+    <strong>${value}%</strong>
+    ${renderMiniProgress(value, `Progress anggaran ${quarter.label}`)}
+    <span class="monev-status ${badge.className}">${badge.label}</span>
+  `;
+}
+
+function renderRencanaAksiRows() {
+  const rows = document.querySelector("#rencanaAksiRows");
+  const cards = document.querySelector("#rencanaAksiCards");
+  const summary = document.querySelector("#rakSummaryText");
+  if (!rows || !cards || !summary) return;
+
+  const entries = getFilteredRencanaAksi();
+  summary.textContent = entries.length
+    ? `${entries.length} dari ${rencanaAksiKinerja.length} rencana aksi tampil sesuai filter.`
+    : "Belum ada data rencana aksi kinerja sesuai filter.";
+
+  if (!entries.length) {
+    rows.innerHTML = `<tr><td colspan="17">Belum ada data Rencana Aksi Kinerja. Tambahkan data baru atau ubah filter.</td></tr>`;
+    cards.innerHTML = `<article class="rak-card"><strong>Belum ada data</strong><span>Tambahkan rencana aksi kinerja tahunan terlebih dahulu.</span></article>`;
+    return;
+  }
+
+  const quarters = getRakQuarters();
+  rows.innerHTML = entries
+    .map((item, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td><strong>${escapeHtml(item.sasaran_strategis)}</strong><small>${escapeHtml(item.tahun)}</small></td>
+        <td>${escapeHtml(item.indikator_kinerja || "-")}</td>
+        <td>${escapeHtml(item.rencana_aksi)}</td>
+        <td>${escapeHtml(item.indikator || "-")}</td>
+        <td><strong>${escapeHtml(item.target_tahun)}</strong><small>${escapeHtml(item.satuan_target || "-")}</small></td>
+        ${quarters.map((quarter) => `<td>${renderRakTargetCell(item, quarter)}</td>`).join("")}
+        <td><strong>${currency(item.anggaran_tahun)}</strong></td>
+        ${quarters.map((quarter) => `<td>${renderRakBudgetCell(item, quarter)}</td>`).join("")}
+        <td>${escapeHtml(item.penanggung_jawab || "-")}</td>
+        <td>
+          <div class="row-actions">
+            <button class="ghost-button" data-detail-rak="${escapeHtml(item.id)}" type="button">Detail</button>
+            <button class="ghost-button" data-edit-rak="${escapeHtml(item.id)}" type="button">Edit</button>
+            <button class="ghost-button" data-delete-rak="${escapeHtml(item.id)}" type="button">Hapus</button>
+          </div>
+        </td>
+      </tr>
+    `)
+    .join("");
+
+  cards.innerHTML = entries
+    .map((item) => {
+      const lastBudget = percentValue(item.realisasi_anggaran_tw4 || item.realisasi_anggaran_tw3 || item.realisasi_anggaran_tw2 || item.realisasi_anggaran_tw1);
+      const badge = getBudgetBadge(lastBudget);
+      return `
+        <article class="rak-card">
+          <div class="rak-card-head">
+            <span class="badge">${escapeHtml(item.tahun)}</span>
+            <span class="monev-status ${badge.className}">${badge.label}</span>
+          </div>
+          <strong>${escapeHtml(item.rencana_aksi)}</strong>
+          <span>${escapeHtml(item.sasaran_strategis)}</span>
+          <small>${escapeHtml(item.indikator_kinerja || "-")}</small>
+          <div class="rak-card-progress">
+            ${quarters.map((quarter) => `<div><span>${quarter.label}</span>${renderMiniProgress(percentValue(item[quarter.budget]), `Anggaran ${quarter.label}`)}</div>`).join("")}
+          </div>
+          <div class="row-actions">
+            <button class="ghost-button" data-detail-rak="${escapeHtml(item.id)}" type="button">Detail</button>
+            <button class="ghost-button" data-edit-rak="${escapeHtml(item.id)}" type="button">Edit</button>
+            <button class="ghost-button" data-delete-rak="${escapeHtml(item.id)}" type="button">Hapus</button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function refreshRencanaAksiViews() {
+  populateRencanaAksiFilters();
+  populateRencanaAksiDatalists();
+  renderRencanaAksiRows();
+}
+
+function resetRencanaAksiForm() {
+  const form = document.querySelector("#rencanaAksiForm");
+  if (!form) return;
+  form.reset();
+  form.elements.tahun.value = new Date().getFullYear();
+  document.querySelector("#rencanaAksiEditId").value = "";
+  document.querySelector("#rencanaAksiFormTitle").textContent = "Tambah Rencana Aksi Kinerja";
+  document.querySelector("#saveRencanaAksi").textContent = "Simpan Rencana Aksi";
+}
+
+function showRencanaAksiForm(item = null) {
+  const panel = document.querySelector("#rencanaAksiFormPanel");
+  const form = document.querySelector("#rencanaAksiForm");
+  if (!panel || !form) return;
+  panel.hidden = false;
+  resetRencanaAksiForm();
+  if (item) {
+    document.querySelector("#rencanaAksiEditId").value = item.id;
+    document.querySelector("#rencanaAksiFormTitle").textContent = "Edit Rencana Aksi Kinerja";
+    document.querySelector("#saveRencanaAksi").textContent = "Simpan Perubahan";
+    [
+      "tahun",
+      "sasaran_strategis",
+      "indikator_kinerja",
+      "rencana_aksi",
+      "indikator",
+      "target_tahun",
+      "satuan_target",
+      "target_tw1",
+      "target_tw2",
+      "target_tw3",
+      "target_tw4",
+      "anggaran_tahun",
+      "realisasi_anggaran_tw1",
+      "realisasi_anggaran_tw2",
+      "realisasi_anggaran_tw3",
+      "realisasi_anggaran_tw4",
+      "penanggung_jawab",
+    ].forEach((field) => {
+      form.elements[field].value = item[field] ?? "";
+    });
+  }
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function validateRencanaAksiPayload(payload) {
+  if (!payload.tahun) return "Tahun wajib diisi.";
+  if (!payload.sasaran_strategis) return "Sasaran strategis wajib diisi.";
+  if (!payload.rencana_aksi) return "Rencana aksi wajib diisi.";
+  if (!payload.target_tahun) return "Target tahun wajib diisi.";
+  if (payload.anggaran_tahun && !Number.isFinite(Number(payload.anggaran_tahun))) return "Anggaran hanya menerima angka.";
+  const invalidQuarter = getRakQuarters().find((quarter) => Number(payload[quarter.budget] || 0) > 100);
+  if (invalidQuarter) return `Persentase realisasi anggaran ${invalidQuarter.label} maksimal 100%.`;
+  return "";
+}
+
+function collectRencanaAksiPayload(form) {
+  const data = new FormData(form);
+  return {
+    tahun: String(data.get("tahun") || "").trim(),
+    sasaran_strategis: String(data.get("sasaran_strategis") || "").trim(),
+    indikator_kinerja: String(data.get("indikator_kinerja") || "").trim(),
+    rencana_aksi: String(data.get("rencana_aksi") || "").trim(),
+    indikator: String(data.get("indikator") || "").trim(),
+    target_tahun: String(data.get("target_tahun") || "").trim(),
+    satuan_target: String(data.get("satuan_target") || "").trim(),
+    target_tw1: String(data.get("target_tw1") || "").trim(),
+    target_tw2: String(data.get("target_tw2") || "").trim(),
+    target_tw3: String(data.get("target_tw3") || "").trim(),
+    target_tw4: String(data.get("target_tw4") || "").trim(),
+    anggaran_tahun: Number(data.get("anggaran_tahun") || 0),
+    realisasi_anggaran_tw1: Number(data.get("realisasi_anggaran_tw1") || 0),
+    realisasi_anggaran_tw2: Number(data.get("realisasi_anggaran_tw2") || 0),
+    realisasi_anggaran_tw3: Number(data.get("realisasi_anggaran_tw3") || 0),
+    realisasi_anggaran_tw4: Number(data.get("realisasi_anggaran_tw4") || 0),
+    penanggung_jawab: String(data.get("penanggung_jawab") || "").trim(),
+  };
+}
+
+function renderRencanaAksiDetail(item) {
+  const dialog = document.querySelector("#rencanaAksiDetailDialog");
+  const title = document.querySelector("#rencanaAksiDetailTitle");
+  const copy = document.querySelector("#rencanaAksiDetailCopy");
+  const content = document.querySelector("#rencanaAksiDetailContent");
+  if (!dialog || !title || !copy || !content || !item) return;
+
+  title.textContent = item.rencana_aksi;
+  copy.textContent = `${item.sasaran_strategis} - ${item.tahun}`;
+  const fields = [
+    ["Tahun", item.tahun],
+    ["Sasaran Strategis", item.sasaran_strategis],
+    ["Indikator Kinerja", item.indikator_kinerja || "-"],
+    ["Rencana Aksi", item.rencana_aksi],
+    ["Indikator Rencana Aksi", item.indikator || "-"],
+    ["Target Tahun", `${item.target_tahun} ${item.satuan_target || ""}`.trim()],
+    ["Anggaran Tahun", currency(item.anggaran_tahun)],
+    ["Penanggung Jawab", item.penanggung_jawab || "-"],
+    ["Dibuat", formatDateTime(item.created_at)],
+    ["Diperbarui", formatDateTime(item.updated_at)],
+  ];
+  content.innerHTML = `
+    ${fields.map(([label, value]) => `<article><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></article>`).join("")}
+    <article class="rak-detail-wide">
+      <span>Target Kinerja Triwulan</span>
+      <div class="rak-quarter-summary">
+        ${getRakQuarters().map((quarter) => `<div><strong>${quarter.label}</strong><span>${escapeHtml(item[quarter.target] || "-")}</span>${renderMiniProgress(parseTargetProgress(item[quarter.target], item.target_tahun), `Target ${quarter.label}`)}</div>`).join("")}
+      </div>
+    </article>
+    <article class="rak-detail-wide">
+      <span>Progress Realisasi Anggaran</span>
+      <div class="rak-quarter-summary">
+        ${getRakQuarters().map((quarter) => {
+          const badge = getBudgetBadge(item[quarter.budget]);
+          return `<div><strong>${quarter.label}</strong><span>${percentValue(item[quarter.budget])}%</span>${renderMiniProgress(item[quarter.budget], `Anggaran ${quarter.label}`)}<em class="monev-status ${badge.className}">${badge.label}</em></div>`;
+        }).join("")}
+      </div>
+    </article>
+  `;
+  dialog.showModal();
+}
+
+function getRencanaAksiExportRows() {
+  return getFilteredRencanaAksi().map((item, index) => ({
+    No: index + 1,
+    Tahun: item.tahun,
+    "Sasaran Strategis": item.sasaran_strategis,
+    "Indikator Kinerja": item.indikator_kinerja,
+    "Rencana Aksi": item.rencana_aksi,
+    Indikator: item.indikator,
+    "Target Tahun": item.target_tahun,
+    "Satuan Target": item.satuan_target,
+    "Target TW I": item.target_tw1,
+    "Target TW II": item.target_tw2,
+    "Target TW III": item.target_tw3,
+    "Target TW IV": item.target_tw4,
+    "Anggaran Tahun": item.anggaran_tahun,
+    "Realisasi Anggaran TW I (%)": item.realisasi_anggaran_tw1,
+    "Realisasi Anggaran TW II (%)": item.realisasi_anggaran_tw2,
+    "Realisasi Anggaran TW III (%)": item.realisasi_anggaran_tw3,
+    "Realisasi Anggaran TW IV (%)": item.realisasi_anggaran_tw4,
+    "Penanggung Jawab": item.penanggung_jawab,
+  }));
+}
+
+function exportRencanaAksiExcel() {
+  const rows = getRencanaAksiExportRows();
+  if (!rows.length) {
+    alert("Tidak ada data Rencana Aksi Kinerja untuk diexport.");
+    return;
+  }
+  if (window.XLSX) {
+    const worksheet = window.XLSX.utils.json_to_sheet(rows);
+    const workbook = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(workbook, worksheet, "Rencana Aksi Kinerja");
+    window.XLSX.writeFile(workbook, "rencana-aksi-kinerja.xlsx");
+    return;
+  }
+  const headers = Object.keys(rows[0]);
+  const htmlRows = rows.map((row) => `<tr>${headers.map((header) => `<td>${escapeHtml(row[header])}</td>`).join("")}</tr>`).join("");
+  downloadBlob(
+    "rencana-aksi-kinerja.xls",
+    `<html><head><meta charset="utf-8" /></head><body><table><thead><tr>${headers.map((header) => `<th>${escapeHtml(header)}</th>`).join("")}</tr></thead><tbody>${htmlRows}</tbody></table></body></html>`,
+    "application/vnd.ms-excel;charset=utf-8"
+  );
+}
+
+function buildRencanaAksiPdf(rows) {
+  const lines = [
+    "Rencana Aksi Kinerja",
+    `Dicetak: ${formatDateTime(new Date().toISOString())}`,
+    ...rows.map((row) => `${row.No}. ${row.Tahun} | ${row["Sasaran Strategis"]} | ${row["Rencana Aksi"]} | PJ: ${row["Penanggung Jawab"]}`),
+  ];
+  const escapePdf = (value) => String(value).replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
+  const stream = [
+    "BT",
+    "/F1 9 Tf",
+    "36 800 Td",
+    ...lines.flatMap((line, index) => [`(${escapePdf(line.slice(0, 150))}) Tj`, index === lines.length - 1 ? "" : "0 -18 Td"]),
+    "ET",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const objects = [
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 842 595] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    `5 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}\nendstream\nendobj\n`,
+  ];
+  let pdf = "%PDF-1.4\n";
+  const offsets = [0];
+  objects.forEach((object) => {
+    offsets.push(pdf.length);
+    pdf += object;
+  });
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([pdf], { type: "application/pdf" });
+}
+
+function exportRencanaAksiPdf() {
+  const rows = getRencanaAksiExportRows();
+  if (!rows.length) {
+    alert("Tidak ada data Rencana Aksi Kinerja untuk diexport.");
+    return;
+  }
+  downloadBlob("rencana-aksi-kinerja.pdf", buildRencanaAksiPdf(rows), "application/pdf");
 }
 
 function normalizeKey(value) {
@@ -3329,10 +3779,25 @@ function switchPage(pageId) {
 
   document.querySelector("#pageTitle").textContent = titles[pageId];
   if (pageId === "realisasi") renderRealizationFormulaPanel();
+  if (pageId === "rencana-aksi-kinerja") refreshRencanaAksiViews();
+}
+
+function getInitialPageFromRoute() {
+  if (window.location.pathname.endsWith("/rencana-aksi-kinerja")) return "rencana-aksi-kinerja";
+  if (window.location.hash === "#/rencana-aksi-kinerja") return "rencana-aksi-kinerja";
+  return "";
 }
 
 document.querySelectorAll(".nav-item").forEach((button) => {
-  button.addEventListener("click", () => switchPage(button.dataset.page));
+  button.addEventListener("click", () => {
+    if (button.dataset.route) window.location.hash = button.dataset.route;
+    switchPage(button.dataset.page);
+  });
+});
+
+window.addEventListener("hashchange", () => {
+  const page = getInitialPageFromRoute();
+  if (page) switchPage(page);
 });
 
 document.querySelector("#loginForm").addEventListener("submit", async (event) => {
@@ -3438,6 +3903,82 @@ document.querySelector("#satkerAccountRows").addEventListener("click", async (ev
 document.querySelector("#performanceYearSelect")?.addEventListener("change", renderPerformanceTree);
 document.querySelector("#performanceTreeViewButton")?.addEventListener("click", renderPerformanceTreeDialog);
 document.querySelector("#ikuSearchInput")?.addEventListener("input", renderIkuRows);
+document.querySelector("#renstraSasaranLevelFilter")?.addEventListener("change", renderRenstraRows);
+document.querySelector("#renstraIndicatorLevelFilter")?.addEventListener("change", renderRenstraRows);
+document.querySelector("#showRencanaAksiForm")?.addEventListener("click", () => showRencanaAksiForm());
+document.querySelector("#cancelRencanaAksiEdit")?.addEventListener("click", () => {
+  document.querySelector("#rencanaAksiFormPanel").hidden = true;
+  resetRencanaAksiForm();
+});
+document.querySelector("#resetRencanaAksiForm")?.addEventListener("click", resetRencanaAksiForm);
+document.querySelector("#exportRencanaAksiExcel")?.addEventListener("click", exportRencanaAksiExcel);
+document.querySelector("#exportRencanaAksiPdf")?.addEventListener("click", exportRencanaAksiPdf);
+document.querySelectorAll("#rakFilterTahun, #rakFilterSasaran, #rakFilterPj, #rakFilterTriwulan").forEach((filter) => {
+  filter.addEventListener("change", renderRencanaAksiRows);
+});
+
+document.querySelector("#rencanaAksiForm")?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const payload = collectRencanaAksiPayload(event.currentTarget);
+  const validationMessage = validateRencanaAksiPayload(payload);
+  if (validationMessage) {
+    alert(validationMessage);
+    return;
+  }
+
+  const editId = document.querySelector("#rencanaAksiEditId").value;
+  const timestamp = new Date().toISOString();
+  if (editId) {
+    rencanaAksiKinerja = rencanaAksiKinerja.map((item) =>
+      item.id === editId
+        ? {
+            ...item,
+            ...payload,
+            updated_at: timestamp,
+          }
+        : item
+    );
+  } else {
+    rencanaAksiKinerja.unshift({
+      id: `rak_${Date.now()}`,
+      ...payload,
+      created_at: timestamp,
+      updated_at: timestamp,
+    });
+  }
+
+  persistRencanaAksiKinerja();
+  refreshRencanaAksiViews();
+  resetRencanaAksiForm();
+  document.querySelector("#rencanaAksiFormPanel").hidden = true;
+  alert("Rencana Aksi Kinerja berhasil disimpan.");
+});
+
+document.querySelector("#rencana-aksi-kinerja")?.addEventListener("click", (event) => {
+  const detailButton = event.target.closest("[data-detail-rak]");
+  const editButton = event.target.closest("[data-edit-rak]");
+  const deleteButton = event.target.closest("[data-delete-rak]");
+  const targetId = detailButton?.dataset.detailRak || editButton?.dataset.editRak || deleteButton?.dataset.deleteRak;
+  if (!targetId) return;
+  const item = rencanaAksiKinerja.find((entry) => entry.id === targetId);
+  if (!item) return;
+
+  if (detailButton) {
+    renderRencanaAksiDetail(item);
+    return;
+  }
+
+  if (editButton) {
+    showRencanaAksiForm(item);
+    return;
+  }
+
+  if (confirm("Hapus Rencana Aksi Kinerja ini?")) {
+    rencanaAksiKinerja = rencanaAksiKinerja.filter((entry) => entry.id !== targetId);
+    persistRencanaAksiKinerja();
+    refreshRencanaAksiViews();
+  }
+});
 
 function updateIkuFormulaField(key, fieldName, value) {
   const formula = {
@@ -4098,4 +4639,8 @@ renderAgreements();
 renderSelectedFiles();
 renderMonevMonitoring();
 renderSatkerAccounts();
+resetRencanaAksiForm();
+refreshRencanaAksiViews();
+const initialPage = getInitialPageFromRoute();
+if (initialPage) switchPage(initialPage);
 initializeAuth();

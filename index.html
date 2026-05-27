@@ -3,16 +3,18 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SAKIP Kejaksaan</title>
+    <title>SAKIP KEJAKSAAN RI</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <section class="login-shell" id="loginShell">
       <form class="login-card" id="loginForm">
         <div class="brand login-brand">
-          <div class="brand-mark">K</div>
+          <div class="brand-mark">
+            <img src="assets/logo-pembinaan.png" alt="Logo Pembinaan Kejaksaan Republik Indonesia" />
+          </div>
           <div>
-            <strong>SAKIP Kejaksaan</strong>
+            <strong>SAKIP KEJAKSAAN RI</strong>
             <span>Masuk ke sistem akuntabilitas kinerja</span>
           </div>
         </div>
@@ -33,9 +35,11 @@
     <main class="app-shell" id="appShell" hidden>
       <aside class="sidebar" aria-label="Navigasi utama">
         <div class="brand">
-          <div class="brand-mark">K</div>
+          <div class="brand-mark">
+            <img src="assets/logo-pembinaan.png" alt="Logo Pembinaan Kejaksaan Republik Indonesia" />
+          </div>
           <div>
-            <strong>SAKIP Kejaksaan</strong>
+            <strong>SAKIP KEJAKSAAN RI</strong>
             <span>Akuntabilitas Kinerja</span>
           </div>
         </div>
@@ -45,13 +49,16 @@
             <span>Dashboard Kinerja</span>
           </button>
           <button class="nav-item" data-page="renstra" type="button">
-            <span>Matriks Renstra</span>
+            <span>Rencana Strategis</span>
           </button>
           <button class="nav-item" data-page="iku" type="button">
             <span>IKU</span>
           </button>
           <button class="nav-item" data-page="perjanjian" type="button">
             <span>Perjanjian Kinerja</span>
+          </button>
+          <button class="nav-item" data-page="rencana-aksi-kinerja" data-route="/rencana-aksi-kinerja" type="button">
+            <span>Rencana Aksi Kinerja</span>
           </button>
           <button class="nav-item" data-page="realisasi" type="button">
             <span>Realisasi Kinerja</span>
@@ -341,24 +348,35 @@
 
           <section class="panel">
             <div class="panel-header">
-              <h2>Daftar Matriks Renstra</h2>
-              <button class="ghost-button" id="resetRenstra" type="button">Reset Renstra</button>
+              <div>
+                <h2>Daftar Matriks Renstra</h2>
+                <p class="panel-copy">Filter tampilan berdasarkan level sasaran dan level indikator.</p>
+              </div>
+              <div class="renstra-list-actions">
+                <label class="search-field">
+                  <span>Level Sasaran</span>
+                  <select id="renstraSasaranLevelFilter">
+                    <option value="">Semua Level</option>
+                    <option value="strategic">Sasaran Strategis</option>
+                    <option value="program">Sasaran Program</option>
+                    <option value="activity">Sasaran Kegiatan</option>
+                  </select>
+                </label>
+                <label class="search-field">
+                  <span>Level Indikator</span>
+                  <select id="renstraIndicatorLevelFilter">
+                    <option value="">Semua Level</option>
+                    <option value="strategic">Indikator Strategis</option>
+                    <option value="program">Indikator Program</option>
+                    <option value="activity">Indikator Kegiatan</option>
+                  </select>
+                </label>
+                <button class="ghost-button" id="resetRenstra" type="button">Reset Renstra</button>
+              </div>
             </div>
             <div class="table-wrap">
               <table class="renstra-table">
-                <thead>
-                  <tr>
-                    <th>Periode</th>
-                    <th>Sasaran Strategis</th>
-                    <th>Indikator Strategis</th>
-                    <th>Sasaran Program</th>
-                    <th>Indikator Program</th>
-                    <th>Sasaran Kegiatan</th>
-                    <th>Indikator Kegiatan</th>
-                    <th>Penanggung Jawab</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
+                <thead id="renstraTableHead"></thead>
                 <tbody id="renstraRows"></tbody>
               </table>
             </div>
@@ -652,6 +670,154 @@
           </section>
         </section>
 
+        <section class="content-page" id="rencana-aksi-kinerja">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Rencana Aksi Kinerja</h2>
+                <p class="panel-copy">Kelola rencana aksi tahunan, target kinerja triwulan, anggaran, realisasi anggaran, dan penanggung jawab.</p>
+              </div>
+              <div class="rak-actions">
+                <button class="primary-button" id="showRencanaAksiForm" type="button">Tambah Data</button>
+                <button class="ghost-button" id="exportRencanaAksiExcel" type="button">Export Excel</button>
+                <button class="ghost-button" id="exportRencanaAksiPdf" type="button">Export PDF</button>
+              </div>
+            </div>
+
+            <div class="rak-filter-grid">
+              <label>
+                Tahun
+                <select id="rakFilterTahun"></select>
+              </label>
+              <label>
+                Sasaran Strategis
+                <select id="rakFilterSasaran"></select>
+              </label>
+              <label>
+                Penanggung Jawab / PJ
+                <select id="rakFilterPj"></select>
+              </label>
+              <label>
+                Triwulan
+                <select id="rakFilterTriwulan">
+                  <option value="">Semua Triwulan</option>
+                  <option value="tw1">TW I</option>
+                  <option value="tw2">TW II</option>
+                  <option value="tw3">TW III</option>
+                  <option value="tw4">TW IV</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="panel rak-form-panel" id="rencanaAksiFormPanel" hidden>
+            <div class="panel-header">
+              <div>
+                <h2 id="rencanaAksiFormTitle">Tambah Rencana Aksi Kinerja</h2>
+                <p class="panel-copy">Isi target tahunan dan rincian target triwulan untuk kinerja serta anggaran.</p>
+              </div>
+              <button class="ghost-button" id="cancelRencanaAksiEdit" type="button">Tutup Form</button>
+            </div>
+            <form class="rak-form" id="rencanaAksiForm">
+              <input id="rencanaAksiEditId" type="hidden" value="" />
+              <label>
+                Tahun
+                <input name="tahun" type="number" min="2000" max="2100" placeholder="2026" required />
+              </label>
+              <label>
+                Sasaran Strategis
+                <input name="sasaran_strategis" list="rakSasaranOptions" placeholder="Nama sasaran strategis" required />
+                <datalist id="rakSasaranOptions"></datalist>
+              </label>
+              <label>
+                Indikator Kinerja
+                <input name="indikator_kinerja" list="rakIndikatorOptions" placeholder="Nama indikator kinerja" />
+                <datalist id="rakIndikatorOptions"></datalist>
+              </label>
+              <label>
+                Rencana Aksi
+                <input name="rencana_aksi" placeholder="Uraian rencana aksi" required />
+              </label>
+              <label>
+                Indikator Rencana Aksi
+                <input name="indikator" placeholder="Indikator rencana aksi" />
+              </label>
+              <label>
+                Target Tahun
+                <input name="target_tahun" placeholder="Contoh: 4 Laporan atau 100%" required />
+              </label>
+              <label>
+                Satuan Target
+                <input name="satuan_target" placeholder="Laporan, %, Dokumen" />
+              </label>
+              <fieldset class="rak-quarter-set full-span">
+                <legend>Target Kinerja Triwulan</legend>
+                <label>TW I<input name="target_tw1" placeholder="1 Laporan" /></label>
+                <label>TW II<input name="target_tw2" placeholder="2 Laporan" /></label>
+                <label>TW III<input name="target_tw3" placeholder="3 Laporan" /></label>
+                <label>TW IV<input name="target_tw4" placeholder="4 Laporan" /></label>
+              </fieldset>
+              <label>
+                Anggaran Tahun
+                <input name="anggaran_tahun" type="number" min="0" placeholder="Contoh: 125000000" />
+              </label>
+              <fieldset class="rak-quarter-set full-span">
+                <legend>Target Realisasi Anggaran Triwulan (%)</legend>
+                <label>TW I<input name="realisasi_anggaran_tw1" type="number" min="0" max="100" step="0.01" placeholder="25" /></label>
+                <label>TW II<input name="realisasi_anggaran_tw2" type="number" min="0" max="100" step="0.01" placeholder="50" /></label>
+                <label>TW III<input name="realisasi_anggaran_tw3" type="number" min="0" max="100" step="0.01" placeholder="75" /></label>
+                <label>TW IV<input name="realisasi_anggaran_tw4" type="number" min="0" max="100" step="0.01" placeholder="100" /></label>
+              </fieldset>
+              <label>
+                Penanggung Jawab
+                <input name="penanggung_jawab" list="rakPjOptions" placeholder="Contoh: Subbag Pembinaan" />
+                <datalist id="rakPjOptions"></datalist>
+              </label>
+              <div class="form-actions full-span">
+                <button class="primary-button" id="saveRencanaAksi" type="submit">Simpan Rencana Aksi</button>
+                <button class="ghost-button" id="resetRencanaAksiForm" type="button">Reset Form</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Rekap Rencana Aksi Kinerja</h2>
+                <p class="panel-copy" id="rakSummaryText">Belum ada data rencana aksi kinerja.</p>
+              </div>
+              <span class="badge">Scroll horizontal aktif</span>
+            </div>
+            <div class="table-wrap rak-table-wrap">
+              <table class="rak-table">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Sasaran Strategis</th>
+                    <th>Indikator Kinerja</th>
+                    <th>Rencana Aksi</th>
+                    <th>Indikator</th>
+                    <th>Target Tahun</th>
+                    <th>Target Kinerja TW I</th>
+                    <th>Target Kinerja TW II</th>
+                    <th>Target Kinerja TW III</th>
+                    <th>Target Kinerja TW IV</th>
+                    <th>Anggaran Tahun</th>
+                    <th>Target Realisasi Anggaran TW I</th>
+                    <th>Target Realisasi Anggaran TW II</th>
+                    <th>Target Realisasi Anggaran TW III</th>
+                    <th>Target Realisasi Anggaran TW IV</th>
+                    <th>Penanggung Jawab / PJ</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="rencanaAksiRows"></tbody>
+              </table>
+            </div>
+            <div class="rak-card-list" id="rencanaAksiCards"></div>
+          </section>
+        </section>
+
         <section class="content-page" id="eviden">
           <section class="akip-upload-shell" aria-labelledby="akipUploadTitle">
             <div class="akip-upload-header">
@@ -927,6 +1093,19 @@
           <button class="icon-button" value="cancel" aria-label="Tutup" type="submit">x</button>
         </div>
         <div class="performance-tree full-tree-view" id="performanceTreeDialogContent"></div>
+      </form>
+    </dialog>
+
+    <dialog id="rencanaAksiDetailDialog">
+      <form method="dialog" class="modal rak-detail-modal">
+        <div class="panel-header">
+          <div>
+            <h2 id="rencanaAksiDetailTitle">Detail Rencana Aksi Kinerja</h2>
+            <p class="panel-copy" id="rencanaAksiDetailCopy">Ringkasan lengkap rencana aksi.</p>
+          </div>
+          <button class="icon-button" value="cancel" aria-label="Tutup" type="submit">x</button>
+        </div>
+        <div class="rak-detail-grid" id="rencanaAksiDetailContent"></div>
       </form>
     </dialog>
 
