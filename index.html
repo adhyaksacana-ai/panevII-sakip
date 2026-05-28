@@ -61,7 +61,7 @@
             <span>Rencana Aksi Kinerja</span>
           </button>
           <button class="nav-item" data-page="realisasi" type="button">
-            <span>Realisasi Kinerja</span>
+            <span>Pelaporan Kinerja</span>
           </button>
           <button class="nav-item" data-page="eviden" type="button">
             <span>Dokumen AKIP</span>
@@ -136,7 +136,7 @@
             <div class="panel-header">
               <div>
                 <h2>Capaian Sasaran Strategis</h2>
-                <p class="panel-copy">Diagram hanya menampilkan capaian sasaran strategis yang tersinkron dari menu Realisasi Kinerja.</p>
+                <p class="panel-copy">Diagram hanya menampilkan capaian sasaran strategis yang tersinkron dari menu Pelaporan Kinerja.</p>
               </div>
               <span class="badge">Merah &lt;60, Kuning &lt;85, Hijau >=85</span>
             </div>
@@ -442,7 +442,7 @@
             <form class="satker-form" id="satkerForm">
               <label>
                 Tingkat Satker
-                <select name="satkerLevel" required>
+                <select name="satkerLevel" id="satkerLevelSelect" required>
                   <option value="Kejaksaan Agung">Kejaksaan Agung</option>
                   <option value="Kejaksaan Tinggi">Kejaksaan Tinggi</option>
                   <option value="Kejaksaan Negeri">Kejaksaan Negeri</option>
@@ -455,7 +455,9 @@
               </label>
               <label>
                 Wilayah
-                <input name="satkerRegion" placeholder="Contoh: Jawa Barat" />
+                <input name="satkerRegion" id="satkerRegionInput" list="satkerRegionOptions" placeholder="Contoh: Kejaksaan Tinggi Jawa Barat" />
+                <datalist id="satkerRegionOptions"></datalist>
+                <span class="helper-text" id="satkerRegionHelp">Untuk Kejaksaan Negeri/Cabang Kejaksaan Negeri, wilayah harus memilih akun induk yang sudah terdaftar.</span>
               </label>
               <div class="form-actions">
                 <button class="primary-button" type="submit">Buat Akun</button>
@@ -637,8 +639,12 @@
                 <input name="budget" type="number" min="0" placeholder="Contoh: 125000000" required />
               </label>
               <label class="full-span">
-                Keterangan
-                <textarea name="note" rows="4" placeholder="Ringkasan capaian, kendala, dan tindak lanjut"></textarea>
+                Faktor yang Mempengaruhi Pencapaian Kinerja
+                <textarea name="performanceFactor" rows="4" placeholder="Uraikan faktor pendukung, kendala, atau kondisi yang mempengaruhi capaian"></textarea>
+              </label>
+              <label class="full-span">
+                Strategi Optimalisasi Pencapaian Kinerja Berikutnya
+                <textarea name="optimizationStrategy" rows="4" placeholder="Uraikan strategi, tindak lanjut, atau rencana perbaikan berikutnya"></textarea>
               </label>
               <button class="primary-button" type="submit">Simpan Realisasi Triwulan</button>
             </form>
@@ -660,7 +666,8 @@
                     <th>Target</th>
                     <th>Capaian</th>
                     <th>Anggaran</th>
-                    <th>Keterangan</th>
+                    <th>Faktor yang Mempengaruhi Pencapaian Kinerja</th>
+                    <th>Strategi Optimalisasi Pencapaian Kinerja Berikutnya</th>
                     <th>Aksi</th>
                   </tr>
                 </thead>
@@ -895,23 +902,29 @@
               <span class="badge">Terhubung Dokumen AKIP</span>
             </div>
 
-            <div class="monev-summary-grid">
-              <article class="metric">
-                <span>Kepatuhan Dokumen</span>
-                <strong id="monevDocumentCompliance">0%</strong>
-                <small id="monevDocumentSummary">Belum ada dokumen diunggah</small>
-              </article>
-              <article class="metric">
-                <span>Monev Rencana Aksi</span>
-                <strong id="monevActionCount">0</strong>
-                <small>Rencana aksi berbasis dokumen dan realisasi kinerja</small>
-              </article>
-              <article class="metric">
-                <span>Realisasi Anggaran</span>
-                <strong id="monevBudgetTotal">Rp0</strong>
-                <small id="monevBudgetSummary">Belum ada realisasi anggaran</small>
-              </article>
+            <div class="monev-tabs" role="tablist" aria-label="Sub menu Monitoring dan Evaluasi">
+              <button class="monev-tab active" data-monev-tab="satker" type="button" role="tab" aria-selected="true">Monev Satker</button>
+              <button class="monev-tab" data-monev-tab="wilayah" type="button" role="tab" aria-selected="false">Monev Per Wilayah</button>
             </div>
+
+            <div class="monev-tab-panel active" id="monevSatkerPanel">
+              <div class="monev-summary-grid">
+                <article class="metric">
+                  <span>Kepatuhan Dokumen</span>
+                  <strong id="monevDocumentCompliance">0%</strong>
+                  <small id="monevDocumentSummary">Belum ada dokumen diunggah</small>
+                </article>
+                <article class="metric">
+                  <span>Monev Rencana Aksi</span>
+                  <strong id="monevActionCount">0</strong>
+                  <small>Rencana aksi berbasis dokumen dan realisasi kinerja</small>
+                </article>
+                <article class="metric">
+                  <span>Realisasi Anggaran</span>
+                  <strong id="monevBudgetTotal">Rp0</strong>
+                  <small id="monevBudgetSummary">Belum ada realisasi anggaran</small>
+                </article>
+              </div>
 
             <section class="monev-section" aria-labelledby="documentComplianceTitle">
               <div class="section-heading">
@@ -967,7 +980,7 @@
               <div class="section-heading">
                 <div>
                   <strong id="budgetRealizationTitle">3. Realisasi Anggaran</strong>
-                  <span>Rekap anggaran yang telah diinput pada menu Realisasi Kinerja.</span>
+                  <span>Rekap anggaran yang telah diinput pada menu Pelaporan Kinerja.</span>
                 </div>
               </div>
               <div class="table-wrap monev-table-wrap">
@@ -985,6 +998,44 @@
                 </table>
               </div>
             </section>
+            </div>
+
+            <div class="monev-tab-panel" id="monevWilayahPanel">
+              <section class="monev-section" aria-labelledby="regionalMonevTitle">
+                <div class="section-heading">
+                  <div>
+                    <strong id="regionalMonevTitle">Monev Seluruh Satuan Kerja</strong>
+                    <span>Daftar Kejaksaan Tinggi beserta Kejaksaan Negeri dan Cabang Kejaksaan Negeri di bawah wilayah akun yang terdaftar.</span>
+                  </div>
+                </div>
+                <div class="monev-regional-filters">
+                  <label>
+                    Level Satker
+                    <select id="monevRegionalLevelFilter">
+                      <option value="">Semua Satker</option>
+                      <option value="Kejaksaan Agung">Kejaksaan Agung</option>
+                      <option value="Kejaksaan Tinggi">Kejaksaan Tinggi</option>
+                      <option value="Kejaksaan Negeri">Kejaksaan Negeri</option>
+                      <option value="Cabang Kejaksaan Negeri">Cabang Kejaksaan Negeri</option>
+                    </select>
+                  </label>
+                  <label>
+                    Wilayah Kejaksaan Tinggi
+                    <select id="monevRegionalKejatiFilter"></select>
+                  </label>
+                  <label>
+                    Wilayah Kejaksaan Negeri
+                    <select id="monevRegionalKejariFilter"></select>
+                  </label>
+                  <label>
+                    Cari Satuan Kerja
+                    <input id="monevRegionalSearch" placeholder="Cari nama atau wilayah" />
+                  </label>
+                </div>
+                <div class="monev-regional-summary" id="monevRegionalSummary"></div>
+                <div class="monev-regional-tree" id="monevRegionalTree"></div>
+              </section>
+            </div>
           </section>
         </section>
 

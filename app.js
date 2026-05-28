@@ -164,7 +164,7 @@ const titles = {
   iku: "Indikator Kinerja Utama",
   "akun-satker": "Akun Satker",
   perjanjian: "Perjanjian Kinerja",
-  realisasi: "Realisasi Kinerja",
+  realisasi: "Pelaporan Kinerja",
   "rencana-aksi-kinerja": "Rencana Aksi Kinerja",
   eviden: "Dokumen AKIP",
   evaluasi: "Monitoring dan Evaluasi",
@@ -957,12 +957,72 @@ function generateLocalSatkerUsername(level, name) {
   return username;
 }
 
+function getRegisteredKejatiNames() {
+  return satkerAccounts
+    .filter((account) => account.level === "Kejaksaan Tinggi")
+    .map((account) => account.name)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "id"));
+}
+
+function getRegisteredKejariNames() {
+  return satkerAccounts
+    .filter((account) => account.level === "Kejaksaan Negeri")
+    .map((account) => account.name)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, "id"));
+}
+
+function updateSatkerRegionOptions() {
+  const options = document.querySelector("#satkerRegionOptions");
+  const levelSelect = document.querySelector("#satkerLevelSelect");
+  const regionInput = document.querySelector("#satkerRegionInput");
+  const helper = document.querySelector("#satkerRegionHelp");
+  if (!options || !levelSelect || !regionInput) return;
+
+  const requiresRegisteredKejati = levelSelect.value === "Kejaksaan Negeri";
+  const requiresRegisteredKejari = levelSelect.value === "Cabang Kejaksaan Negeri";
+  const regionOptions = requiresRegisteredKejari ? getRegisteredKejariNames() : getRegisteredKejatiNames();
+  options.innerHTML = regionOptions.map((name) => `<option value="${escapeHtml(name)}"></option>`).join("");
+  regionInput.required = requiresRegisteredKejati || requiresRegisteredKejari;
+  regionInput.placeholder = requiresRegisteredKejari
+    ? "Pilih Kejaksaan Negeri terdaftar"
+    : requiresRegisteredKejati
+      ? "Pilih Kejaksaan Tinggi terdaftar"
+      : "Contoh: Jawa Barat";
+  if (helper) {
+    helper.textContent = requiresRegisteredKejari
+      ? "Wajib memilih wilayah dari akun Kejaksaan Negeri yang sudah terdaftar."
+      : requiresRegisteredKejati
+      ? "Wajib memilih wilayah dari akun Kejaksaan Tinggi yang sudah terdaftar."
+      : "Untuk Kejaksaan Negeri/Cabang Kejaksaan Negeri, wilayah harus memilih akun induk yang sudah terdaftar.";
+  }
+}
+
+function validateSatkerRegion(level, region) {
+  if (level === "Kejaksaan Negeri") {
+    const kejatiNames = getRegisteredKejatiNames();
+    if (!kejatiNames.length) return "Buat akun Kejaksaan Tinggi terlebih dahulu sebelum membuat akun Kejaksaan Negeri.";
+    const isRegisteredKejati = kejatiNames.some((name) => name.toLowerCase() === region.toLowerCase());
+    return isRegisteredKejati ? "" : "Wilayah Kejaksaan Negeri harus sesuai dengan akun Kejaksaan Tinggi yang sudah terdaftar.";
+  }
+  if (level === "Cabang Kejaksaan Negeri") {
+    const kejariNames = getRegisteredKejariNames();
+    if (!kejariNames.length) return "Buat akun Kejaksaan Negeri terlebih dahulu sebelum membuat akun Cabang Kejaksaan Negeri.";
+    const isRegisteredKejari = kejariNames.some((name) => name.toLowerCase() === region.toLowerCase());
+    return isRegisteredKejari ? "" : "Wilayah Cabang Kejaksaan Negeri harus sesuai dengan akun Kejaksaan Negeri yang sudah terdaftar.";
+  }
+  return "";
+}
+
 function renderSatkerAccounts() {
   const rows = document.querySelector("#satkerAccountRows");
   if (!rows) return;
 
   if (!satkerAccounts.length) {
     rows.innerHTML = "<tr><td colspan=\"7\">Belum ada akun satker. Input nama Bidang/Badan/Kota/Provinsi/Kabupaten/Kota untuk membuat akun login otomatis.</td></tr>";
+    updateSatkerRegionOptions();
+    renderMonevRegional();
     return;
   }
 
@@ -985,6 +1045,8 @@ function renderSatkerAccounts() {
       `
     )
     .join("");
+  updateSatkerRegionOptions();
+  renderMonevRegional();
 }
 
 async function loadSatkerAccountsFromServer() {
@@ -1748,6 +1810,14 @@ function updateRealizationAchievementPreview() {
   achievementInput.value = calculateRealizationAchievement(formulaMatch.formula, new FormData(document.querySelector("#realizationForm"))) || "";
 }
 
+function getRealizationPerformanceFactor(item) {
+  return item.performanceFactor || item.note || "";
+}
+
+function getRealizationOptimizationStrategy(item) {
+  return item.optimizationStrategy || "";
+}
+
 function renderRealizations() {
   const rows = document.querySelector("#realizationRows");
   if (!rows) return;
@@ -1759,7 +1829,7 @@ function renderRealizations() {
   if (!signedRealizations.length) {
     rows.innerHTML = `
       <tr>
-        <td colspan="9">Belum ada realisasi dari Perjanjian Kinerja yang sudah ditandatangani.</td>
+        <td colspan="10">Belum ada realisasi dari Perjanjian Kinerja yang sudah ditandatangani.</td>
       </tr>
     `;
     renderMonevMonitoring();
@@ -1785,7 +1855,10 @@ function renderRealizations() {
           <td>
             <strong>${escapeHtml(item.unit || getCurrentUserUnit())}</strong>
             <br />
-            <small>${escapeHtml(item.note || "-")}</small>
+            <small>${escapeHtml(getRealizationPerformanceFactor(item) || "-")}</small>
+          </td>
+          <td>
+            <small>${escapeHtml(getRealizationOptimizationStrategy(item) || "-")}</small>
           </td>
           <td>
             <div class="row-actions">
@@ -1956,6 +2029,7 @@ function refreshRencanaAksiViews() {
   populateRencanaAksiFilters();
   populateRencanaAksiDatalists();
   renderRencanaAksiRows();
+  renderMonevRegional();
 }
 
 function resetRencanaAksiForm() {
@@ -3569,6 +3643,7 @@ function simulateAkipUpload() {
       uploadedAkipDocuments = uploadedAkipDocuments.concat(
         selectedAkipFiles.map((item) => ({
           id: item.id,
+          unit: getCurrentUserUnit(),
           documentType: item.documentType,
           quarter: requiresAkipQuarter(item.documentType) ? item.quarter : "",
           name: item.file.name,
@@ -3719,7 +3794,7 @@ function renderMonevActions() {
           <td>${escapeHtml(target)}</td>
           <td><strong>${escapeHtml(item.achievement)}</strong> <small>(${percent}%)</small></td>
           <td><span class="monev-status ${status.className}">${status.label}</span></td>
-          <td>${escapeHtml(item.note || "-")}</td>
+          <td>${escapeHtml(getRealizationPerformanceFactor(item) || "-")}</td>
         </tr>
       `;
     })
@@ -3740,7 +3815,7 @@ function renderMonevBudget() {
   if (!entries.length) {
     rows.innerHTML = `
       <tr>
-        <td colspan="5">Belum ada data anggaran dari menu Realisasi Kinerja.</td>
+        <td colspan="5">Belum ada data anggaran dari menu Pelaporan Kinerja.</td>
       </tr>
     `;
     return;
@@ -3755,17 +3830,225 @@ function renderMonevBudget() {
           <td>${escapeHtml(indicator.name)}</td>
           <td><strong>${currency(item.budget)}</strong></td>
           <td>${escapeHtml(item.achievement)}</td>
-          <td>${escapeHtml(item.note || "-")}</td>
+          <td>${escapeHtml(getRealizationPerformanceFactor(item) || getRealizationOptimizationStrategy(item) || "-")}</td>
         </tr>
       `;
     })
     .join("");
 }
 
+function getMonevRegionalFilters() {
+  return {
+    level: document.querySelector("#monevRegionalLevelFilter")?.value || "",
+    kejati: document.querySelector("#monevRegionalKejatiFilter")?.value || "",
+    kejari: document.querySelector("#monevRegionalKejariFilter")?.value || "",
+    search: String(document.querySelector("#monevRegionalSearch")?.value || "").trim().toLowerCase(),
+  };
+}
+
+function setSelectOptions(select, options, placeholder) {
+  if (!select) return;
+  const currentValue = select.value;
+  select.innerHTML = [
+    `<option value="">${escapeHtml(placeholder)}</option>`,
+    ...options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`),
+  ].join("");
+  select.value = options.includes(currentValue) ? currentValue : "";
+}
+
+function getSatkerByLevel(level) {
+  return satkerAccounts.filter((account) => account.level === level);
+}
+
+function getAccountSearchText(account) {
+  return [account.level, account.name, account.region, account.status].filter(Boolean).join(" ").toLowerCase();
+}
+
+function getAccountKejatiName(account) {
+  if (account.level === "Kejaksaan Tinggi") return account.name;
+  if (account.level === "Kejaksaan Negeri") return account.region || "";
+  if (account.level === "Cabang Kejaksaan Negeri") {
+    const parentKejari = satkerAccounts.find((item) => item.level === "Kejaksaan Negeri" && item.name === account.region);
+    return parentKejari?.region || "";
+  }
+  return "";
+}
+
+function getAccountKejariName(account) {
+  if (account.level === "Kejaksaan Negeri") return account.name;
+  if (account.level === "Cabang Kejaksaan Negeri") return account.region || "";
+  return "";
+}
+
+function normalizeUnitName(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getDataUnitName(item) {
+  return item.unit || getCurrentUserUnit();
+}
+
+function itemBelongsToUnit(item, unitName) {
+  return normalizeUnitName(getDataUnitName(item)) === normalizeUnitName(unitName);
+}
+
+function getMonevDataForAccount(account) {
+  const documents = uploadedAkipDocuments.filter((document) => itemBelongsToUnit(document, account.name));
+  const documentTypes = [...new Set(documents.map((document) => document.documentType).filter(Boolean))];
+  const actions = rencanaAksiKinerja
+    .filter((item) => itemBelongsToUnit(item, account.name))
+    .sort((first, second) => new Date(second.updated_at || second.created_at || 0) - new Date(first.updated_at || first.created_at || 0));
+  const realizationsForUnit = realizations.filter((item) => itemBelongsToUnit(item, account.name));
+  const budgetTotal = realizationsForUnit.reduce((total, item) => total + Number(item.budget || 0), 0);
+  const latestAction = actions[0] || null;
+  return {
+    documents,
+    documentTypes,
+    latestAction,
+    realizations: realizationsForUnit,
+    budgetTotal,
+    complete: documentTypes.length > 0 && latestAction && realizationsForUnit.length > 0,
+  };
+}
+
+function updateMonevRegionalFilterOptions() {
+  const filters = getMonevRegionalFilters();
+  const kejatiOptions = getSatkerByLevel("Kejaksaan Tinggi").map((account) => account.name).sort((a, b) => a.localeCompare(b, "id"));
+  const kejariOptions = getSatkerByLevel("Kejaksaan Negeri")
+    .filter((account) => !filters.kejati || account.region === filters.kejati)
+    .map((account) => account.name)
+    .sort((a, b) => a.localeCompare(b, "id"));
+  setSelectOptions(document.querySelector("#monevRegionalKejatiFilter"), kejatiOptions, "Semua Wilayah Kejati");
+  setSelectOptions(document.querySelector("#monevRegionalKejariFilter"), kejariOptions, "Semua Wilayah Kejari");
+}
+
+function buildMonevRegionalNodes() {
+  const agungNodes = getSatkerByLevel("Kejaksaan Agung").map((account) => ({ account, children: [] }));
+  const kejariAccounts = getSatkerByLevel("Kejaksaan Negeri");
+  const branchAccounts = getSatkerByLevel("Cabang Kejaksaan Negeri");
+  const kejatiNodes = getSatkerByLevel("Kejaksaan Tinggi").map((kejati) => {
+    const kejariNodes = kejariAccounts
+      .filter((kejari) => kejari.region === kejati.name)
+      .map((kejari) => ({
+        account: kejari,
+        children: branchAccounts.filter((branch) => branch.region === kejari.name).map((branch) => ({ account: branch, children: [] })),
+      }));
+    return { account: kejati, children: kejariNodes };
+  });
+  const registeredKejatiNames = new Set(getSatkerByLevel("Kejaksaan Tinggi").map((account) => account.name));
+  const registeredKejariNames = new Set(kejariAccounts.map((account) => account.name));
+  const orphanKejariNodes = kejariAccounts
+    .filter((kejari) => !registeredKejatiNames.has(kejari.region))
+    .map((kejari) => ({
+      account: kejari,
+      children: branchAccounts.filter((branch) => branch.region === kejari.name).map((branch) => ({ account: branch, children: [] })),
+    }));
+  const orphanBranchNodes = branchAccounts
+    .filter((branch) => !registeredKejariNames.has(branch.region))
+    .map((branch) => ({ account: branch, children: [] }));
+  return [...agungNodes, ...kejatiNodes, ...orphanKejariNodes, ...orphanBranchNodes];
+}
+
+function filterMonevRegionalNode(node, filters) {
+  const filteredChildren = node.children.map((child) => filterMonevRegionalNode(child, filters)).filter(Boolean);
+  const matchesLevel = !filters.level || node.account.level === filters.level;
+  const matchesKejati = !filters.kejati || getAccountKejatiName(node.account) === filters.kejati;
+  const matchesKejari = !filters.kejari || getAccountKejariName(node.account) === filters.kejari;
+  const matchesSearch = !filters.search || getAccountSearchText(node.account).includes(filters.search);
+  const selfMatches = matchesLevel && matchesKejati && matchesKejari && matchesSearch;
+  if (!selfMatches && !filteredChildren.length) return null;
+  return { ...node, children: filteredChildren, selfMatches, mutedContext: !selfMatches && filteredChildren.length > 0 };
+}
+
+function flattenMonevRegionalNodes(nodes, onlyMatches = false) {
+  return nodes.flatMap((node) => [
+    ...(onlyMatches && !node.selfMatches ? [] : [node.account]),
+    ...flattenMonevRegionalNodes(node.children, onlyMatches),
+  ]);
+}
+
+function renderMonevRegionalNode(node) {
+  const monevData = getMonevDataForAccount(node.account);
+  const documentTypeSet = new Set(monevData.documentTypes);
+  const documentChecklist = akipDocumentTypes
+    .map((type) => {
+      const done = documentTypeSet.has(type);
+      return `
+        <span class="monev-mini-check ${done ? "done" : "missing"}">
+          <i>${done ? "&#10003;" : "-"}</i>${escapeHtml(type)}
+        </span>
+      `;
+    })
+    .join("");
+  const latestActionText = monevData.latestAction
+    ? `${monevData.latestAction.rencana_aksi || monevData.latestAction.sasaran_strategis || "Rencana aksi"}`
+    : "Belum ada input";
+  const latestActionDate = monevData.latestAction?.updated_at || monevData.latestAction?.created_at;
+  const hasAction = Boolean(monevData.latestAction);
+  const hasBudget = monevData.realizations.length > 0;
+  return `
+    <article class="monev-regional-node ${node.mutedContext ? "context" : ""}">
+      <div class="monev-regional-card ${monevData.complete ? "complete" : ""}">
+        <div class="monev-regional-identity">
+          <span class="badge">${escapeHtml(node.account.level)}</span>
+          <div>
+            <strong>${escapeHtml(node.account.name)}</strong>
+            <small>${escapeHtml(node.account.region || "Wilayah pusat")}</small>
+          </div>
+        </div>
+        <div class="monev-regional-data">
+          <article class="monev-regional-document-list">
+            <header>
+              <span>Jenis Dokumen</span>
+              <strong>${monevData.documentTypes.length}/${akipDocumentTypes.length}</strong>
+            </header>
+            <div class="monev-mini-check-grid">${documentChecklist}</div>
+          </article>
+          <article>
+            <span>Monev Rencana Aksi Terakhir</span>
+            <strong><i class="monev-inline-check ${hasAction ? "done" : "missing"}">${hasAction ? "&#10003;" : "-"}</i>${escapeHtml(latestActionText)}</strong>
+            <small>${latestActionDate ? escapeHtml(new Date(latestActionDate).toLocaleDateString("id-ID")) : "Belum terisi"}</small>
+          </article>
+          <article>
+            <span>Realisasi Anggaran</span>
+            <strong><i class="monev-inline-check ${hasBudget ? "done" : "missing"}">${hasBudget ? "&#10003;" : "-"}</i>${currency(monevData.budgetTotal)}</strong>
+            <small>${monevData.realizations.length ? `${monevData.realizations.length} pelaporan` : "Belum terisi"}</small>
+          </article>
+        </div>
+        <div class="monev-regional-check ${monevData.complete ? "complete" : "pending"}" aria-label="${monevData.complete ? "Data monev lengkap" : "Data monev belum lengkap"}">
+          ${monevData.complete ? "&#10003;" : "-"}
+        </div>
+      </div>
+      ${node.children.length ? `<div class="monev-regional-children">${node.children.map(renderMonevRegionalNode).join("")}</div>` : ""}
+    </article>
+  `;
+}
+
+function renderMonevRegional() {
+  const tree = document.querySelector("#monevRegionalTree");
+  const summary = document.querySelector("#monevRegionalSummary");
+  if (!tree || !summary) return;
+  updateMonevRegionalFilterOptions();
+  const filters = getMonevRegionalFilters();
+  const nodes = buildMonevRegionalNodes().map((node) => filterMonevRegionalNode(node, filters)).filter(Boolean);
+  const visibleAccounts = flattenMonevRegionalNodes(nodes, true).filter((account, index, list) => list.findIndex((item) => item.id === account.id) === index);
+  const counts = ["Kejaksaan Agung", "Kejaksaan Tinggi", "Kejaksaan Negeri", "Cabang Kejaksaan Negeri"].map((level) => ({
+    level,
+    count: visibleAccounts.filter((account) => account.level === level).length,
+  }));
+  summary.innerHTML = counts
+    .map((item) => `<article><span>${escapeHtml(item.level)}</span><strong>${item.count}</strong></article>`)
+    .join("");
+  tree.innerHTML = nodes.length
+    ? nodes.map(renderMonevRegionalNode).join("")
+    : '<div class="empty-dashboard"><strong>Data satker tidak ditemukan.</strong><span>Tambahkan akun satker atau ubah filter pencarian.</span></div>';
+}
+
 function renderMonevMonitoring() {
   renderMonevDocuments();
   renderMonevActions();
   renderMonevBudget();
+  renderMonevRegional();
 }
 
 function switchPage(pageId) {
@@ -3871,18 +4154,29 @@ document.querySelector("#confirmLogout").addEventListener("click", async () => {
 document.querySelector("#satkerForm").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
+  const level = String(form.get("satkerLevel") || "").trim();
+  const region = String(form.get("satkerRegion") || "").trim();
+  const validationMessage = validateSatkerRegion(level, region);
+  if (validationMessage) {
+    alert(validationMessage);
+    return;
+  }
+
   try {
     await createSatkerAccount({
-      level: form.get("satkerLevel"),
+      level,
       name: String(form.get("satkerName") || "").trim(),
-      region: String(form.get("satkerRegion") || "").trim(),
+      region,
     });
     event.currentTarget.reset();
+    updateSatkerRegionOptions();
     alert("Akun satker berhasil dibuat.");
   } catch (error) {
     alert(`Gagal membuat akun satker: ${error.message}`);
   }
 });
+
+document.querySelector("#satkerLevelSelect").addEventListener("change", updateSatkerRegionOptions);
 
 document.querySelector("#reloadSatkerAccounts").addEventListener("click", () => {
   loadSatkerAccountsFromServer().catch((error) => alert(`Gagal memuat akun satker: ${error.message}`));
@@ -3934,6 +4228,7 @@ document.querySelector("#rencanaAksiForm")?.addEventListener("submit", (event) =
         ? {
             ...item,
             ...payload,
+            unit: item.unit || getCurrentUserUnit(),
             updated_at: timestamp,
           }
         : item
@@ -3941,6 +4236,7 @@ document.querySelector("#rencanaAksiForm")?.addEventListener("submit", (event) =
   } else {
     rencanaAksiKinerja.unshift({
       id: `rak_${Date.now()}`,
+      unit: getCurrentUserUnit(),
       ...payload,
       created_at: timestamp,
       updated_at: timestamp,
@@ -4178,6 +4474,26 @@ document.querySelector("#monevDocumentRows").addEventListener("click", (event) =
   if (category) renderMonevDocumentDialog(category);
 });
 
+document.querySelectorAll("[data-monev-tab]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const target = button.dataset.monevTab;
+    document.querySelectorAll("[data-monev-tab]").forEach((item) => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-selected", String(active));
+    });
+    document.querySelector("#monevSatkerPanel").classList.toggle("active", target === "satker");
+    document.querySelector("#monevWilayahPanel").classList.toggle("active", target === "wilayah");
+    if (target === "wilayah") renderMonevRegional();
+  });
+});
+
+document
+  .querySelectorAll("#monevRegionalLevelFilter, #monevRegionalKejatiFilter, #monevRegionalKejariFilter, #monevRegionalSearch")
+  .forEach((filter) => {
+    filter.addEventListener(filter.tagName === "INPUT" ? "input" : "change", renderMonevRegional);
+  });
+
 document.querySelector("#resetAkipScores").addEventListener("click", () => {
   akipState.answers = {};
   akipState.notes = {};
@@ -4222,7 +4538,8 @@ document.querySelector("#realizationForm").addEventListener("submit", (event) =>
     formulaMethod: formulaMatch.formula.method,
     formulaText: getIkuFormulaText(formulaMatch.formula),
     budget: Number(form.get("budget")),
-    note: form.get("note"),
+    performanceFactor: form.get("performanceFactor"),
+    optimizationStrategy: form.get("optimizationStrategy"),
   });
   renderRealizations();
   renderGoals();

@@ -131,6 +131,20 @@ function sanitizeSatkerAccount(account) {
   };
 }
 
+function findRegisteredKejatiByName(name) {
+  const normalizedName = String(name || "").trim().toLowerCase();
+  return store.satkerAccounts.find(
+    (account) => account.level === "Kejaksaan Tinggi" && account.name.toLowerCase() === normalizedName
+  );
+}
+
+function findRegisteredKejariByName(name) {
+  const normalizedName = String(name || "").trim().toLowerCase();
+  return store.satkerAccounts.find(
+    (account) => account.level === "Kejaksaan Negeri" && account.name.toLowerCase() === normalizedName
+  );
+}
+
 function getBearerToken(request) {
   const header = request.headers.authorization || "";
   const match = header.match(/^Bearer\s+(.+)$/i);
@@ -359,6 +373,16 @@ async function handleApi(request, response, url) {
 
     if (!level || !name) {
       sendError(response, 400, "Tingkat dan nama Bidang/Badan/Kota/Provinsi/Kabupaten/Kota wajib diisi.");
+      return;
+    }
+
+    if (level === "Kejaksaan Negeri" && !findRegisteredKejatiByName(region)) {
+      sendError(response, 400, "Wilayah Kejaksaan Negeri harus memilih akun Kejaksaan Tinggi yang sudah terdaftar.");
+      return;
+    }
+
+    if (level === "Cabang Kejaksaan Negeri" && !findRegisteredKejariByName(region)) {
+      sendError(response, 400, "Wilayah Cabang Kejaksaan Negeri harus memilih akun Kejaksaan Negeri yang sudah terdaftar.");
       return;
     }
 
